@@ -33,8 +33,42 @@ export function SensitivityDriverBadge({
   const toStorageValue = (value: number): number => {
     return isPercentage ? value / 100 : value;
   };
+
+  // Normalize currentRange to always be an array of 5 numbers
+  const normalizeRange = (range: any): number[] => {
+    // If range is null or undefined, use default
+    if (!range) {
+      return [0, 0, 0, 0, 0];
+    }
+    
+    // If range is an array, ensure it has 5 elements
+    if (Array.isArray(range)) {
+      if (range.length >= 5) {
+        return range.slice(0, 5);
+      } else if (range.length === 2) {
+        // If it's a [min, max] tuple, interpolate to 5 values
+        const [min, max] = range;
+        const step = (max - min) / 4;
+        return [min, min + step, min + 2 * step, min + 3 * step, max];
+      } else {
+        // Pad with zeros
+        return [...range, ...Array(5 - range.length).fill(0)];
+      }
+    }
+    
+    // If range is an object with min/max properties
+    if (typeof range === 'object' && 'min' in range && 'max' in range) {
+      const min = range.min;
+      const max = range.max;
+      const step = (max - min) / 4;
+      return [min, min + step, min + 2 * step, min + 3 * step, max];
+    }
+    
+    // Fallback to default
+    return [0, 0, 0, 0, 0];
+  };
   
-  const [range, setRange] = useState<number[]>(currentRange.map(toDisplayValue));
+  const [range, setRange] = useState<number[]>(normalizeRange(currentRange).map(toDisplayValue));
   const [isOpen, setIsOpen] = useState(false);
 
   const handleSave = () => {
