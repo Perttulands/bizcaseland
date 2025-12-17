@@ -1,10 +1,14 @@
 /**
  * Test to verify the corrected efficiency gains logic
- * 
- * New Logic: Efficiency Gains = Improved Value × Value per Unit × Implementation Factor
- * 
- * This represents the ongoing value/cost of the improved process,
- * separate from cost savings which represent the difference between baseline and improved costs.
+ *
+ * Corrected Logic: Efficiency Gains = |Baseline - Improved| × Value per Unit × Implementation Factor
+ *
+ * This represents the actual monetary value of the improvement - the difference between
+ * baseline and improved states, multiplied by the value per unit.
+ *
+ * Examples:
+ * - Hours reduced from 160 to 60: gain = (160-60) × €50/h = €5,000/month
+ * - Detections increased from 4 to 8: gain = |4-8| × €3,000 = €12,000/month
  */
 
 import { describe, it, expect } from 'vitest';
@@ -12,7 +16,7 @@ import { calculateEfficiencyGainsForMonth } from '@/core/engine/calculators/busi
 import { BusinessData } from '@/core/types';
 
 describe('Corrected Efficiency Gains Logic', () => {
-  it('should calculate efficiency gains as: improved value × value per unit', () => {
+  it('should calculate efficiency gains as: |baseline - improved| × value per unit', () => {
     const testData: BusinessData = {
       meta: {
         title: 'Efficiency Test',
@@ -44,18 +48,17 @@ describe('Corrected Efficiency Gains Logic', () => {
     };
 
     const gains = calculateEfficiencyGainsForMonth(testData, 0);
-    
-    // New logic: 8 hours × 50 EUR/hour = 400 EUR (ongoing cost/value of improved process)
-    // This is NOT the savings (which would be 40-8=32 hours × 50 = 1600 EUR)
-    // This is the value/cost of running the improved process
-    expect(gains).toBe(8 * 50); // 400 EUR
+
+    // Corrected logic: |40-8| hours × 50 EUR/hour = 32 × 50 = 1600 EUR
+    // This represents the actual savings from reducing hours worked
+    expect(gains).toBe(Math.abs(40 - 8) * 50); // 1600 EUR
   });
 
-  it('should demonstrate the difference from old logic', () => {
+  it('should handle both reduction and increase scenarios', () => {
     const testData: BusinessData = {
       meta: {
-        title: 'Logic Comparison',
-        description: 'Comparing old vs new logic',
+        title: 'Bidirectional Test',
+        description: 'Testing efficiency gains in both directions',
         business_model: 'cost_savings',
         currency: 'EUR',
         periods: 12,
@@ -65,12 +68,25 @@ describe('Corrected Efficiency Gains Logic', () => {
         cost_savings: {
           efficiency_gains: [
             {
-              id: 'processing_efficiency',
-              label: 'Processing Efficiency',
+              id: 'hours_reduced',
+              label: 'Hours Reduced (baseline > improved)',
               metric: 'hours_per_month',
               baseline_value: { value: 100, unit: 'hours/month', rationale: 'Baseline processing time' },
               improved_value: { value: 20, unit: 'hours/month', rationale: 'Improved processing time' },
               value_per_unit: { value: 75, unit: 'EUR/hour', rationale: 'Value per hour' },
+              implementation_timeline: {
+                start_month: 1,
+                ramp_up_months: 0,
+                full_implementation_month: 1
+              }
+            },
+            {
+              id: 'detections_increased',
+              label: 'Detections Increased (improved > baseline)',
+              metric: 'incidents_per_month',
+              baseline_value: { value: 4, unit: 'incidents/month', rationale: 'Manual detection rate' },
+              improved_value: { value: 12, unit: 'incidents/month', rationale: 'Automated detection rate' },
+              value_per_unit: { value: 500, unit: 'EUR/incident', rationale: 'Value per early detection' },
               implementation_timeline: {
                 start_month: 1,
                 ramp_up_months: 0,
@@ -83,13 +99,11 @@ describe('Corrected Efficiency Gains Logic', () => {
     };
 
     const gains = calculateEfficiencyGainsForMonth(testData, 0);
-    
-    // NEW LOGIC: 20 hours × 75 EUR/hour = 1500 EUR (value of improved process)
-    expect(gains).toBe(20 * 75); // 1500 EUR
-    
-    // OLD LOGIC would have been: (100 - 20) × 75 = 6000 EUR (savings amount)
-    // The old logic was conceptually wrong - it mixed "savings" with "efficiency gains"
-    expect(gains).not.toBe((100 - 20) * 75); // Should NOT be 6000 EUR
+
+    // Hours reduced: |100-20| × 75 = 80 × 75 = 6000 EUR
+    // Detections increased: |4-12| × 500 = 8 × 500 = 4000 EUR
+    // Total: 6000 + 4000 = 10000 EUR
+    expect(gains).toBe((Math.abs(100 - 20) * 75) + (Math.abs(4 - 12) * 500)); // 10000 EUR
   });
 
   it('should handle multiple efficiency gains correctly', () => {
@@ -137,10 +151,10 @@ describe('Corrected Efficiency Gains Logic', () => {
     };
 
     const gains = calculateEfficiencyGainsForMonth(testData, 0);
-    
-    // Process A: 10 hours × 60 EUR/hour = 600 EUR
-    // Process B: 5 hours × 80 EUR/hour = 400 EUR
-    // Total: 600 + 400 = 1000 EUR
-    expect(gains).toBe((10 * 60) + (5 * 80)); // 1000 EUR
+
+    // Process A: |50-10| × 60 = 40 × 60 = 2400 EUR
+    // Process B: |30-5| × 80 = 25 × 80 = 2000 EUR
+    // Total: 2400 + 2000 = 4400 EUR
+    expect(gains).toBe((Math.abs(50 - 10) * 60) + (Math.abs(30 - 5) * 80)); // 4400 EUR
   });
 });
