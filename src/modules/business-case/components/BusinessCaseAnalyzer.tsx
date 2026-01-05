@@ -12,9 +12,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { 
+import {
   Calculator,
-  TrendingUp, 
+  TrendingUp,
   Target,
   ArrowLeft,
   FileText,
@@ -22,7 +22,7 @@ import {
   Activity,
   RotateCcw,
   FileDown,
-  BarChart3
+  BarChart3,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -297,8 +297,8 @@ export function BusinessCaseAnalyzer() {
             <span className="hidden sm:inline">Switch to Market Analysis</span>
             <span className="sm:hidden">Market</span>
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             onClick={exportDataAsPDF}
           >
