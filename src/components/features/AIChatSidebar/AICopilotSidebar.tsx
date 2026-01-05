@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/tooltip';
 import { ChatMessageList } from './ChatMessage';
 import { ChatInput } from './ChatInput';
+import { WebSearchPanel } from './WebSearchPanel';
 
 // ============================================================================
 // Types
@@ -157,6 +158,8 @@ function SidebarContent() {
       <ScrollArea className="flex-1">
         <ChatMessageList messages={state.messages} isStreaming={state.isStreaming} />
       </ScrollArea>
+
+      <WebSearchPanel />
 
       <ChatInput
         onSend={sendMessage}
