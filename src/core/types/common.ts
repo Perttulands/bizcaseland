@@ -35,6 +35,10 @@ export interface ValueWithRationale<T = number> {
   readonly unit: string;
   readonly rationale: string;
   readonly link?: string; // Optional source URL
+  // AI backing fields (optional for backward compatibility)
+  readonly researchIds?: readonly string[];  // References to ResearchDocument IDs
+  readonly aiGenerated?: boolean;            // Was this value AI-suggested?
+  readonly aiConfidence?: number;            // AI confidence score (0-1)
 }
 
 /**

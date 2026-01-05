@@ -119,21 +119,24 @@ export const STORAGE_KEYS = {
   // Business data
   BUSINESS_DATA: 'businessCaseData',
   BUSINESS_DRIVERS: 'businessCaseDrivers',
-  
+
   // Market data
   MARKET_DATA: 'bizcaseland_market_data',
   MARKET_DRIVERS: 'bizcaseland_market_drivers',
-  
+
   // UI state
   ACTIVE_MODE: 'bizcaseland_active_mode',
   THEME: 'bizcaseland-ui-theme',
-  
+
   // Projects (future use)
   PROJECTS: 'bizcaseland_projects',
   CURRENT_PROJECT: 'bizcaseland_current_project',
-  
+
   // Settings
   USER_SETTINGS: 'bizcaseland_settings',
+
+  // AI / Research
+  RESEARCH_DOCUMENTS: 'bizcaseland_research_documents',
 } as const;
 
 export type StorageKey = typeof STORAGE_KEYS[keyof typeof STORAGE_KEYS];
