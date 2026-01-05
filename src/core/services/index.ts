@@ -10,9 +10,11 @@ export * from './json-validation.service';
 export * from './pdf-export-business.service';
 export * from './pdf-export-market.service';
 export * from './ai-service';
+export * from './web-search-service';
 
 // Re-export commonly used service instances
 export { storageService, STORAGE_KEYS } from './storage.service';
 export { validationService } from './validation.service';
 export { syncService } from './sync.service';
 export { aiService, AVAILABLE_MODELS } from './ai-service';
+export { webSearchService, TRUSTED_DOMAINS } from './web-search-service';
