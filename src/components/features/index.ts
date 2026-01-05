@@ -13,3 +13,4 @@ export { VolumeComparison } from './VolumeComparison';
 export { SharedDataManager } from './SharedDataManager';
 export { ThemeToggle } from './ThemeToggle';
 export { ResearchDocPanel, ResearchBadge, useResearchDocuments } from './ResearchDocPanel';
+export { AICopilotSidebar, AICopilotToggle, ChatMessage, ChatMessageList, ChatInput } from './AIChatSidebar';

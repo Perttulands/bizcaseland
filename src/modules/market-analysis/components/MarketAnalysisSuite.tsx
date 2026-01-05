@@ -37,6 +37,7 @@ import { useMarketData, useNavigation } from '@/core/contexts';
 import { MarketData } from '@/core/types';
 import { MarketSuiteMetrics, calculateSuiteMetrics, validateMarketSuiteData } from '@/core/engine/calculators/market-suite-calculations';
 import { ThemeToggle } from '@/components/features/ThemeToggle';
+import { AICopilotSidebar, AICopilotToggle } from '@/components/features/AIChatSidebar';
 
 // Import all market analysis modules
 import { MarketSizingModule } from './modules/MarketSizingModule';
@@ -469,8 +470,9 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
           
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <Button 
-              variant="outline" 
+            <AICopilotToggle />
+            <Button
+              variant="outline"
               size="sm"
               onClick={() => navigate('/business', { state: { initialTab: 'cashflow' } })}
               className="hover:bg-blue-50 hover:border-blue-200"
@@ -507,7 +509,8 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
 
   // Main analysis interface with tabs
   return (
-    <div className="container mx-auto p-4 sm:p-6 space-y-6">
+    <div className="flex h-screen overflow-hidden">
+      <div className="flex-1 overflow-auto container mx-auto p-4 sm:p-6 space-y-6">
       {/* Header - Responsive layout */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
         {/* Left side: Back button, icon, and title */}
@@ -534,8 +537,9 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
         {/* Right side: Action buttons - wrap on mobile */}
         <div className="flex items-center gap-2 flex-wrap">
           <ThemeToggle />
-          <Button 
-            variant="outline" 
+          <AICopilotToggle />
+          <Button
+            variant="outline"
             size="sm"
             onClick={() => navigate('/business', { state: { initialTab: 'cashflow' } })}
             className="hover:bg-blue-50 hover:border-blue-200"
@@ -544,8 +548,8 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
             <span className="hidden sm:inline">Switch to Business Case</span>
             <span className="sm:hidden">Business</span>
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             onClick={exportData}
           >
@@ -811,6 +815,8 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
           />
         </TabsContent>
       </Tabs>
+      </div>
+      <AICopilotSidebar />
     </div>
   );
 }
