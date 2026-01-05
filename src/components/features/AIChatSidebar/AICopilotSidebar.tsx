@@ -34,6 +34,7 @@ import { ChatMessageList } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { InlineQuickActions } from './MarketAIQuickActions';
 import { buildMarketSystemPrompt, type QuickActionPrompt } from '@/core/services/market-ai-context';
+import { WebSearchPanel } from './WebSearchPanel';
 
 // ============================================================================
 // Types
@@ -226,6 +227,8 @@ function SidebarContent({ showMarketContext = false }: SidebarContentProps) {
           <InlineQuickActions onSelectAction={handleQuickAction} />
         </div>
       )}
+
+      <WebSearchPanel />
 
       <ChatInput
         onSend={(msg) => {
