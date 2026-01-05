@@ -11,3 +11,4 @@ export { useBusinessData } from './hooks/useBusinessData';
 export { useMarketData } from './hooks/useMarketData';
 export { useDataStatus } from './hooks/useDataStatus';
 export { useNavigation } from './hooks/useNavigation';
+export { AIProvider, useAI } from './AIContext';

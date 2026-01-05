@@ -4,7 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { vi } from 'vitest';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { DataProvider } from '@/core/contexts';
+import { DataProvider, AIProvider } from '@/core/contexts';
 import { ThemeProvider } from '@/core/contexts/ThemeProvider';
 
 // Create a custom render function that includes providers
@@ -23,7 +23,9 @@ const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <DataProvider>
-              {children}
+              <AIProvider>
+                {children}
+              </AIProvider>
             </DataProvider>
           </TooltipProvider>
         </QueryClientProvider>
@@ -67,7 +69,9 @@ export const renderWithProviders = (
           <QueryClientProvider client={queryClient}>
             <TooltipProvider>
               <DataProvider>
-                {children}
+                <AIProvider>
+                  {children}
+                </AIProvider>
               </DataProvider>
             </TooltipProvider>
           </QueryClientProvider>
