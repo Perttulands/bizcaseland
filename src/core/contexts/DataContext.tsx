@@ -7,6 +7,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import type { BusinessData } from '@/core/types/business';
 import type { MarketData } from '@/core/types/market';
+import type { ResearchDocument } from '@/core/types/ai';
 import { storageService, STORAGE_KEYS } from '@/core/services/storage.service';
 import { validationService } from '@/core/services/validation.service';
 import { syncService } from '@/core/services/sync.service';
@@ -28,6 +29,10 @@ export interface DataState {
     data: MarketData | null;
     hasData: boolean;
     lastModified: string | null;
+  };
+  research: {
+    documents: Record<string, ResearchDocument>;
+    documentCount: number;
   };
   ui: {
     activeMode: AnalysisMode;
@@ -60,11 +65,18 @@ export interface DataContextValue {
   removeMarketDriver: (path: string) => void;
   updateMarketDriverRange: (path: string, range: [number, number]) => void;
   
+  // Research Document Operations
+  addResearchDocument: (doc: ResearchDocument) => void;
+  getResearchDocument: (id: string) => ResearchDocument | undefined;
+  getResearchDocuments: (ids: string[]) => ResearchDocument[];
+  removeResearchDocument: (id: string) => void;
+  clearResearchDocuments: () => void;
+
   // Cross-tool operations
   syncDataFromStorage: () => void;
   validateData: () => void;
   clearAllData: () => void;
-  exportAllData: () => { business: BusinessData | null; market: MarketData | null };
+  exportAllData: () => { business: BusinessData | null; market: MarketData | null; research: Record<string, ResearchDocument> };
 }
 
 // ============================================================================
@@ -86,6 +98,7 @@ export function DataProvider({ children }: DataProviderProps) {
     // Initialize from localStorage
     const businessData = storageService.load<BusinessData>(STORAGE_KEYS.BUSINESS_DATA);
     const marketData = storageService.load<MarketData>(STORAGE_KEYS.MARKET_DATA);
+    const researchDocs = storageService.loadWithDefault<Record<string, ResearchDocument>>(STORAGE_KEYS.RESEARCH_DOCUMENTS, {});
     const activeMode = storageService.loadWithDefault<AnalysisMode>(STORAGE_KEYS.ACTIVE_MODE, 'landing');
 
     return {
@@ -98,6 +111,10 @@ export function DataProvider({ children }: DataProviderProps) {
         data: marketData,
         hasData: !!marketData,
         lastModified: marketData ? new Date().toISOString() : null,
+      },
+      research: {
+        documents: researchDocs,
+        documentCount: Object.keys(researchDocs).length,
       },
       ui: {
         activeMode,
@@ -402,12 +419,73 @@ export function DataProvider({ children }: DataProviderProps) {
   }, []);
 
   // ============================================================================
+  // Research Document Operations
+  // ============================================================================
+
+  const addResearchDocument = useCallback((doc: ResearchDocument) => {
+    setState(prev => {
+      const newDocuments = {
+        ...prev.research.documents,
+        [doc.id]: doc,
+      };
+
+      storageService.save(STORAGE_KEYS.RESEARCH_DOCUMENTS, newDocuments);
+
+      return {
+        ...prev,
+        research: {
+          documents: newDocuments,
+          documentCount: Object.keys(newDocuments).length,
+        },
+      };
+    });
+  }, []);
+
+  const getResearchDocument = useCallback((id: string): ResearchDocument | undefined => {
+    return state.research.documents[id];
+  }, [state.research.documents]);
+
+  const getResearchDocuments = useCallback((ids: string[]): ResearchDocument[] => {
+    return ids
+      .map(id => state.research.documents[id])
+      .filter((doc): doc is ResearchDocument => doc !== undefined);
+  }, [state.research.documents]);
+
+  const removeResearchDocument = useCallback((id: string) => {
+    setState(prev => {
+      const { [id]: removed, ...remaining } = prev.research.documents;
+
+      storageService.save(STORAGE_KEYS.RESEARCH_DOCUMENTS, remaining);
+
+      return {
+        ...prev,
+        research: {
+          documents: remaining,
+          documentCount: Object.keys(remaining).length,
+        },
+      };
+    });
+  }, []);
+
+  const clearResearchDocuments = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      research: {
+        documents: {},
+        documentCount: 0,
+      },
+    }));
+    storageService.remove(STORAGE_KEYS.RESEARCH_DOCUMENTS);
+  }, []);
+
+  // ============================================================================
   // Cross-tool Operations
   // ============================================================================
 
   const syncDataFromStorage = useCallback(() => {
     const businessData = storageService.load<BusinessData>(STORAGE_KEYS.BUSINESS_DATA);
     const marketData = storageService.load<MarketData>(STORAGE_KEYS.MARKET_DATA);
+    const researchDocs = storageService.loadWithDefault<Record<string, ResearchDocument>>(STORAGE_KEYS.RESEARCH_DOCUMENTS, {});
 
     setState(prev => ({
       ...prev,
@@ -420,6 +498,10 @@ export function DataProvider({ children }: DataProviderProps) {
         data: marketData,
         hasData: !!marketData,
         lastModified: marketData ? new Date().toISOString() : null,
+      },
+      research: {
+        documents: researchDocs,
+        documentCount: Object.keys(researchDocs).length,
       },
     }));
   }, []);
@@ -449,18 +531,21 @@ export function DataProvider({ children }: DataProviderProps) {
     setState({
       business: { data: null, hasData: false, lastModified: null },
       market: { data: null, hasData: false, lastModified: null },
+      research: { documents: {}, documentCount: 0 },
       ui: { activeMode: 'landing' },
     });
-    
+
     storageService.remove(STORAGE_KEYS.BUSINESS_DATA);
     storageService.remove(STORAGE_KEYS.MARKET_DATA);
+    storageService.remove(STORAGE_KEYS.RESEARCH_DOCUMENTS);
     storageService.remove(STORAGE_KEYS.ACTIVE_MODE);
   }, []);
 
   const exportAllData = useCallback(() => ({
     business: state.business.data,
     market: state.market.data,
-  }), [state.business.data, state.market.data]);
+    research: state.research.documents,
+  }), [state.business.data, state.market.data, state.research.documents]);
 
   // ============================================================================
   // Storage Event Listener
@@ -496,6 +581,11 @@ export function DataProvider({ children }: DataProviderProps) {
     addMarketDriver,
     removeMarketDriver,
     updateMarketDriverRange,
+    addResearchDocument,
+    getResearchDocument,
+    getResearchDocuments,
+    removeResearchDocument,
+    clearResearchDocuments,
     syncDataFromStorage,
     validateData,
     clearAllData,

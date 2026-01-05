@@ -12,3 +12,4 @@ export { CustomerSegments } from './CustomerSegments';
 export { VolumeComparison } from './VolumeComparison';
 export { SharedDataManager } from './SharedDataManager';
 export { ThemeToggle } from './ThemeToggle';
+export { ResearchDocPanel, ResearchBadge, useResearchDocuments } from './ResearchDocPanel';
