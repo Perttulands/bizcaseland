@@ -1,0 +1,214 @@
+{
+  "schema_version": "1.0",
+  "meta": {
+    "title": "European Fintech Market Entry",
+    "description": "Expansion of fintech payment platform into European markets with transaction-based revenue model and regulatory compliance costs.",
+    "business_model": "market_entry",
+    "currency": "EUR",
+    "periods": 60,
+    "frequency": "monthly"
+  },
+  "assumptions": {
+    "pricing": {
+      "avg_unit_price": {
+        "value": 0.45,
+        "unit": "EUR_per_transaction",
+        "rationale": "Transaction fee per payment processed"
+      }
+    },
+    "financial": {
+      "interest_rate": {
+        "value": 0.12,
+        "unit": "ratio",
+        "rationale": "12% discount rate reflecting market entry risk"
+      }
+    },
+    "customers": {
+      "churn_pct": {
+        "value": 0.02,
+        "unit": "decimal",
+        "rationale": "2% monthly churn for SME merchants"
+      },
+      "segments": [
+        {
+          "id": "german_sme_merchants",
+          "label": "German SME Merchants",
+          "rationale": "Small and medium enterprises in Germany seeking modern payment solutions with competitive fees and reliable service.",
+          "psychographics": {
+            "values": ["reliability", "cost efficiency", "compliance"],
+            "behaviors": ["conservative adoption", "thorough evaluation", "long-term partnerships"],
+            "pain_points": ["legacy system integration", "regulatory complexity", "fee transparency"]
+          },
+          "market_positioning": {
+            "size_percentage": 35,
+            "growth_trend": "expanding",
+            "competitive_intensity": "high",
+            "value_drivers": ["transaction fees", "integration ease", "regulatory compliance"]
+          },
+          "volume": {
+            "type": "pattern",
+            "pattern_type": "geom_growth",
+            "start": { "value": 15000, "unit": "transactions_per_month", "rationale": "Initial transaction volume from early merchant adopters" },
+            "monthly_growth_rate": { "value": 0.015, "unit": "decimal", "rationale": "1.5% monthly growth rate - conservative for regulated market entry" }
+          }
+        },
+        {
+          "id": "austrian_merchants",
+          "label": "Austrian Market Merchants",
+          "rationale": "Austrian businesses seeking EU-compliant payment solutions with German-language support.",
+          "psychographics": {
+            "values": ["quality", "local support", "security"],
+            "behaviors": ["peer recommendations", "market leader preference", "conservative adoption"],
+            "pain_points": ["cross-border complexity", "currency handling", "customer support"]
+          },
+          "market_positioning": {
+            "size_percentage": 15,
+            "growth_trend": "stable",
+            "competitive_intensity": "medium",
+            "value_drivers": ["local presence", "language support", "EU compliance"]
+          },
+          "volume": {
+            "type": "pattern",
+            "pattern_type": "geom_growth",
+            "start": { "value": 5000, "unit": "transactions_per_month", "rationale": "Smaller initial volume in Austrian market" },
+            "monthly_growth_rate": { "value": 0.02, "unit": "decimal", "rationale": "2% monthly growth leveraging German market success" }
+          }
+        },
+        {
+          "id": "swiss_merchants",
+          "label": "Swiss Market Merchants",
+          "rationale": "Swiss businesses requiring multi-currency support and high-security payment processing.",
+          "psychographics": {
+            "values": ["security", "precision", "multi-currency"],
+            "behaviors": ["premium service expectation", "detailed requirements", "long evaluation cycles"],
+            "pain_points": ["CHF handling", "Swiss banking integration", "data sovereignty"]
+          },
+          "market_positioning": {
+            "size_percentage": 10,
+            "growth_trend": "stable",
+            "competitive_intensity": "high",
+            "value_drivers": ["CHF support", "security standards", "Swiss data handling"]
+          },
+          "volume": {
+            "type": "pattern",
+            "pattern_type": "linear_growth",
+            "start": { "value": 3000, "unit": "transactions_per_month", "rationale": "Cautious market entry in Switzerland" },
+            "monthly_flat_increase": { "value": 200, "unit": "transactions_per_month", "rationale": "Steady linear growth in premium market" }
+          }
+        }
+      ]
+    },
+    "unit_economics": {
+      "cogs_pct": {
+        "value": 0.25,
+        "unit": "percentage_of_revenue",
+        "rationale": "25% COGS including payment network fees (15%), fraud prevention (5%), and processing infrastructure (5%)"
+      },
+      "cac": {
+        "value": 250.0,
+        "unit": "EUR_per_customer",
+        "rationale": "Higher CAC for B2B merchant acquisition including sales team, integration support, and compliance verification"
+      }
+    },
+    "opex": [
+      {
+        "name": "Sales & Account Management",
+        "cost_structure": {
+          "fixed_component": {
+            "value": 45000.0,
+            "unit": "EUR_per_month",
+            "rationale": "Regional sales team and key account management"
+          },
+          "variable_revenue_rate": {
+            "value": 0.06,
+            "unit": "percentage_of_revenue",
+            "rationale": "6% of revenue for merchant acquisition and retention programs"
+          }
+        }
+      },
+      {
+        "name": "Compliance & Risk Management",
+        "cost_structure": {
+          "fixed_component": {
+            "value": 35000.0,
+            "unit": "EUR_per_month",
+            "rationale": "Regulatory compliance team, AML/KYC operations, and risk monitoring"
+          },
+          "variable_volume_rate": {
+            "value": 0.005,
+            "unit": "EUR_per_transaction",
+            "rationale": "Per-transaction compliance checks and fraud screening"
+          }
+        }
+      },
+      {
+        "name": "Technology Operations",
+        "cost_structure": {
+          "fixed_component": {
+            "value": 30000.0,
+            "unit": "EUR_per_month",
+            "rationale": "Platform operations, security monitoring, and technical support"
+          },
+          "variable_revenue_rate": {
+            "value": 0.04,
+            "unit": "percentage_of_revenue",
+            "rationale": "4% of revenue for infrastructure scaling and maintenance"
+          }
+        }
+      },
+      {
+        "name": "Customer Support",
+        "cost_structure": {
+          "fixed_component": {
+            "value": 20000.0,
+            "unit": "EUR_per_month",
+            "rationale": "Multi-language customer support team"
+          },
+          "variable_volume_rate": {
+            "value": 0.003,
+            "unit": "EUR_per_transaction",
+            "rationale": "Support costs scale with transaction volume"
+          }
+        }
+      }
+    ],
+    "capex": [
+      {
+        "name": "Market Entry & Licensing",
+        "timeline": {
+          "type": "time_series",
+          "pattern_type": "front_loaded",
+          "series": [
+            { "period": 1, "value": 500000.0, "unit": "EUR", "rationale": "E-money license acquisition, regulatory setup, and legal framework" },
+            { "period": 3, "value": 200000.0, "unit": "EUR", "rationale": "Country-specific regulatory compliance and local entity setup" },
+            { "period": 12, "value": 100000.0, "unit": "EUR", "rationale": "Swiss market entry and additional licensing" }
+          ]
+        }
+      },
+      {
+        "name": "Platform Localization & Integration",
+        "timeline": {
+          "type": "time_series",
+          "pattern_type": "distributed",
+          "series": [
+            { "period": 2, "value": 300000.0, "unit": "EUR", "rationale": "Platform localization, language support, and regional banking integrations" },
+            { "period": 6, "value": 150000.0, "unit": "EUR", "rationale": "Payment scheme certifications and additional integrations" },
+            { "period": 18, "value": 100000.0, "unit": "EUR", "rationale": "Advanced features and ecosystem partnerships" }
+          ]
+        }
+      },
+      {
+        "name": "Infrastructure & Security",
+        "timeline": {
+          "type": "time_series",
+          "pattern_type": "distributed",
+          "series": [
+            { "period": 1, "value": 200000.0, "unit": "EUR", "rationale": "European data center setup and security infrastructure" },
+            { "period": 12, "value": 75000.0, "unit": "EUR", "rationale": "Security certifications and penetration testing" },
+            { "period": 24, "value": 50000.0, "unit": "EUR", "rationale": "Disaster recovery and redundancy improvements" }
+          ]
+        }
+      }
+    ]
+  }
+}
