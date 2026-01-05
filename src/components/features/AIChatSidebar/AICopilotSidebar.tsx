@@ -1,12 +1,14 @@
 /**
  * AICopilotSidebar - Main AI chat sidebar component
  * Resizable panel for desktop, Sheet for mobile
+ * Supports context-aware prompts for market analysis
  */
 
-import React from 'react';
-import { Bot, MessageSquare, Settings, Trash2, X } from 'lucide-react';
+import React, { useCallback, useEffect } from 'react';
+import { Bot, MessageSquare, Settings, Trash2, X, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAI } from '@/core/contexts/AIContext';
+import { useMarketData } from '@/core/contexts';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -30,6 +32,8 @@ import {
 } from '@/components/ui/tooltip';
 import { ChatMessageList } from './ChatMessage';
 import { ChatInput } from './ChatInput';
+import { InlineQuickActions } from './MarketAIQuickActions';
+import { buildMarketSystemPrompt, type QuickActionPrompt } from '@/core/services/market-ai-context';
 
 // ============================================================================
 // Types
@@ -37,6 +41,7 @@ import { ChatInput } from './ChatInput';
 
 interface AICopilotSidebarProps {
   className?: string;
+  showMarketContext?: boolean;
 }
 
 // ============================================================================
@@ -68,6 +73,7 @@ interface SidebarHeaderProps {
   onModelChange: (model: string) => void;
   availableModels: readonly { id: string; name: string; description: string }[];
   totalTokens: number;
+  showMarketBadge?: boolean;
 }
 
 function SidebarHeader({
@@ -77,12 +83,18 @@ function SidebarHeader({
   onModelChange,
   availableModels,
   totalTokens,
+  showMarketBadge,
 }: SidebarHeaderProps) {
   return (
     <div className="flex items-center justify-between p-3 border-b">
       <div className="flex items-center gap-2">
         <Bot className="h-5 w-5 text-primary" />
         <span className="font-semibold">AI Assistant</span>
+        {showMarketBadge && (
+          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+            Market
+          </span>
+        )}
       </div>
 
       <div className="flex items-center gap-1">
@@ -139,9 +151,46 @@ function SidebarHeader({
 // Sidebar Content
 // ============================================================================
 
-function SidebarContent() {
-  const { state, sendMessage, cancelStream, clearMessages, setModel, availableModels, setIsOpen } =
-    useAI();
+interface SidebarContentProps {
+  showMarketContext?: boolean;
+}
+
+function SidebarContent({ showMarketContext = false }: SidebarContentProps) {
+  const {
+    state,
+    sendMessage,
+    sendMessageWithPrompt,
+    cancelStream,
+    clearMessages,
+    setModel,
+    setSystemPrompt,
+    availableModels,
+    setIsOpen,
+    contextType
+  } = useAI();
+
+  // Get market data for context-aware prompts
+  const { data: marketData } = useMarketData();
+
+  // Update system prompt when market data changes (for market analysis context)
+  useEffect(() => {
+    if (showMarketContext && marketData) {
+      const marketPrompt = buildMarketSystemPrompt(marketData);
+      setSystemPrompt(marketPrompt);
+    }
+  }, [showMarketContext, marketData, setSystemPrompt]);
+
+  // Handle quick action selection
+  const handleQuickAction = useCallback((action: QuickActionPrompt) => {
+    if (marketData) {
+      const marketPrompt = buildMarketSystemPrompt(marketData);
+      sendMessageWithPrompt(action.prompt, marketPrompt);
+    } else {
+      sendMessage(action.prompt);
+    }
+  }, [marketData, sendMessage, sendMessageWithPrompt]);
+
+  const showQuickActions = showMarketContext && state.messages.length === 0;
 
   return (
     <div className="flex flex-col h-full">
@@ -152,17 +201,44 @@ function SidebarContent() {
         onModelChange={setModel}
         availableModels={availableModels}
         totalTokens={state.totalTokensUsed}
+        showMarketBadge={showMarketContext}
       />
 
       <ScrollArea className="flex-1">
-        <ChatMessageList messages={state.messages} isStreaming={state.isStreaming} />
+        {showQuickActions ? (
+          <div className="p-4 space-y-4">
+            <div className="text-center py-6">
+              <Sparkles className="h-12 w-12 mx-auto text-primary/50 mb-3" />
+              <h3 className="font-medium text-lg">Market Analysis AI</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                I can help you analyze markets, identify competitors, and build customer segments.
+              </p>
+            </div>
+            <InlineQuickActions onSelectAction={handleQuickAction} />
+          </div>
+        ) : (
+          <ChatMessageList messages={state.messages} isStreaming={state.isStreaming} />
+        )}
       </ScrollArea>
 
+      {!showQuickActions && showMarketContext && (
+        <div className="px-3 pt-2 border-t border-border/50">
+          <InlineQuickActions onSelectAction={handleQuickAction} />
+        </div>
+      )}
+
       <ChatInput
-        onSend={sendMessage}
+        onSend={(msg) => {
+          if (showMarketContext && marketData) {
+            const marketPrompt = buildMarketSystemPrompt(marketData);
+            sendMessageWithPrompt(msg, marketPrompt);
+          } else {
+            sendMessage(msg);
+          }
+        }}
         onCancel={cancelStream}
         isLoading={state.isStreaming}
-        placeholder="Ask about your business case..."
+        placeholder={showMarketContext ? "Ask about market analysis..." : "Ask about your business case..."}
       />
     </div>
   );
@@ -174,9 +250,10 @@ function SidebarContent() {
 
 interface DesktopSidebarProps {
   className?: string;
+  showMarketContext?: boolean;
 }
 
-function DesktopSidebar({ className }: DesktopSidebarProps) {
+function DesktopSidebar({ className, showMarketContext }: DesktopSidebarProps) {
   const { isOpen } = useAI();
 
   if (!isOpen) return null;
@@ -188,7 +265,7 @@ function DesktopSidebar({ className }: DesktopSidebarProps) {
         className
       )}
     >
-      <SidebarContent />
+      <SidebarContent showMarketContext={showMarketContext} />
     </div>
   );
 }
@@ -197,7 +274,11 @@ function DesktopSidebar({ className }: DesktopSidebarProps) {
 // Mobile Sidebar (Sheet)
 // ============================================================================
 
-function MobileSidebar() {
+interface MobileSidebarProps {
+  showMarketContext?: boolean;
+}
+
+function MobileSidebar({ showMarketContext }: MobileSidebarProps) {
   const { isOpen, setIsOpen } = useAI();
 
   return (
@@ -206,7 +287,7 @@ function MobileSidebar() {
         <SheetHeader className="sr-only">
           <SheetTitle>AI Assistant</SheetTitle>
         </SheetHeader>
-        <SidebarContent />
+        <SidebarContent showMarketContext={showMarketContext} />
       </SheetContent>
     </Sheet>
   );
@@ -247,14 +328,14 @@ export function AICopilotToggle({ className }: { className?: string }) {
 // Main Component
 // ============================================================================
 
-export function AICopilotSidebar({ className }: AICopilotSidebarProps) {
+export function AICopilotSidebar({ className, showMarketContext }: AICopilotSidebarProps) {
   const isMobile = useIsMobile();
 
   if (isMobile) {
-    return <MobileSidebar />;
+    return <MobileSidebar showMarketContext={showMarketContext} />;
   }
 
-  return <DesktopSidebar className={className} />;
+  return <DesktopSidebar className={className} showMarketContext={showMarketContext} />;
 }
 
 export default AICopilotSidebar;

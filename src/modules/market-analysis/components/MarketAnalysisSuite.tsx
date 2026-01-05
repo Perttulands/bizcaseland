@@ -816,7 +816,7 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
         </TabsContent>
       </Tabs>
       </div>
-      <AICopilotSidebar />
+      <AICopilotSidebar showMarketContext />
     </div>
   );
 }
