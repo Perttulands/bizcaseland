@@ -9,3 +9,4 @@ export { MarketAIQuickActions, InlineQuickActions } from './MarketAIQuickActions
 export { WebSearchPanel } from './WebSearchPanel';
 export { DebatePanel } from './DebatePanel';
 export { EvidenceTrailPanel } from './EvidenceTrailPanel';
+export { VoiceControlPanel, VoiceButton } from './VoiceControlPanel';

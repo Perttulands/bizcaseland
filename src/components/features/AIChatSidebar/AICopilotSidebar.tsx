@@ -6,7 +6,7 @@
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { Bot, MessageSquare, Settings, Trash2, X, Sparkles, Scale, FileText } from 'lucide-react';
+import { Bot, MessageSquare, Settings, Trash2, X, Sparkles, Scale, FileText, Mic } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAI } from '@/core/contexts/AIContext';
 import { useMarketData, useDebate } from '@/core/contexts';
@@ -39,12 +39,14 @@ import { buildMarketSystemPrompt, type QuickActionPrompt } from '@/core/services
 import { WebSearchPanel } from './WebSearchPanel';
 import { DebatePanel } from './DebatePanel';
 import { EvidenceTrailPanel } from './EvidenceTrailPanel';
+import { VoiceControlPanel, VoiceButton } from './VoiceControlPanel';
+import { useVoice } from '@/core/contexts/VoiceContext';
 
 // ============================================================================
 // Types
 // ============================================================================
 
-type SidebarMode = 'chat' | 'debate' | 'evidence';
+type SidebarMode = 'chat' | 'debate' | 'evidence' | 'voice';
 
 interface AICopilotSidebarProps {
   className?: string;
@@ -163,14 +165,16 @@ interface ModeTabsProps {
   onModeChange: (mode: SidebarMode) => void;
   evidenceCount: number;
   isDebating: boolean;
+  isListening: boolean;
+  voiceSupported: boolean;
 }
 
-function ModeTabs({ mode, onModeChange, evidenceCount, isDebating }: ModeTabsProps) {
+function ModeTabs({ mode, onModeChange, evidenceCount, isDebating, isListening, voiceSupported }: ModeTabsProps) {
   return (
     <div className="flex border-b">
       <button
         className={cn(
-          'flex-1 py-2 px-3 text-xs font-medium transition-colors flex items-center justify-center gap-1.5',
+          'flex-1 py-2 px-2 text-xs font-medium transition-colors flex items-center justify-center gap-1',
           mode === 'chat'
             ? 'border-b-2 border-primary text-primary'
             : 'text-muted-foreground hover:text-foreground'
@@ -180,9 +184,24 @@ function ModeTabs({ mode, onModeChange, evidenceCount, isDebating }: ModeTabsPro
         <MessageSquare className="w-3.5 h-3.5" />
         Chat
       </button>
+      {voiceSupported && (
+        <button
+          className={cn(
+            'flex-1 py-2 px-2 text-xs font-medium transition-colors flex items-center justify-center gap-1',
+            mode === 'voice'
+              ? 'border-b-2 border-primary text-primary'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+          onClick={() => onModeChange('voice')}
+        >
+          <Mic className="w-3.5 h-3.5" />
+          Voice
+          {isListening && <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />}
+        </button>
+      )}
       <button
         className={cn(
-          'flex-1 py-2 px-3 text-xs font-medium transition-colors flex items-center justify-center gap-1.5',
+          'flex-1 py-2 px-2 text-xs font-medium transition-colors flex items-center justify-center gap-1',
           mode === 'debate'
             ? 'border-b-2 border-primary text-primary'
             : 'text-muted-foreground hover:text-foreground'
@@ -195,7 +214,7 @@ function ModeTabs({ mode, onModeChange, evidenceCount, isDebating }: ModeTabsPro
       </button>
       <button
         className={cn(
-          'flex-1 py-2 px-3 text-xs font-medium transition-colors flex items-center justify-center gap-1.5',
+          'flex-1 py-2 px-2 text-xs font-medium transition-colors flex items-center justify-center gap-1',
           mode === 'evidence'
             ? 'border-b-2 border-primary text-primary'
             : 'text-muted-foreground hover:text-foreground'
@@ -203,7 +222,7 @@ function ModeTabs({ mode, onModeChange, evidenceCount, isDebating }: ModeTabsPro
         onClick={() => onModeChange('evidence')}
       >
         <FileText className="w-3.5 h-3.5" />
-        Evidence
+        Trail
         {evidenceCount > 0 && (
           <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
             {evidenceCount}
@@ -240,6 +259,9 @@ function SidebarContent({ showMarketContext = false }: SidebarContentProps) {
 
   // Get debate state
   const { state: debateState, isDebating } = useDebate();
+
+  // Get voice state
+  const { state: voiceState, isListening } = useVoice();
 
   // Get market data for context-aware prompts
   const { data: marketData } = useMarketData();
@@ -292,6 +314,8 @@ function SidebarContent({ showMarketContext = false }: SidebarContentProps) {
         onModeChange={setMode}
         evidenceCount={debateState.evidenceTrail.length}
         isDebating={isDebating}
+        isListening={isListening}
+        voiceSupported={voiceState.isSupported}
       />
 
       {/* Content based on mode */}
@@ -336,6 +360,10 @@ function SidebarContent({ showMarketContext = false }: SidebarContentProps) {
             placeholder={showMarketContext ? "Ask about market analysis..." : "Ask about your business case..."}
           />
         </>
+      )}
+
+      {mode === 'voice' && (
+        <VoiceControlPanel className="flex-1" />
       )}
 
       {mode === 'debate' && (
