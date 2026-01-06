@@ -156,7 +156,7 @@ interface SidebarContentProps {
   showMarketContext?: boolean;
 }
 
-function SidebarContent({ showMarketContext = false }: SidebarContentProps) {
+export function SidebarContent({ showMarketContext = false }: SidebarContentProps) {
   const {
     state,
     sendMessage,

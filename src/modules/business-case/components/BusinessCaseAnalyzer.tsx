@@ -33,7 +33,7 @@ import { VolumeAnalysisTab } from './VolumeAnalysisTab';
 import { useBusinessData, useNavigation } from '@/core/contexts';
 import { BusinessData } from '@/core/types';
 import { ThemeToggle } from '@/components/features/ThemeToggle';
-import { AICopilotSidebar, AICopilotToggle } from '@/components/features/AIChatSidebar';
+import { AICopilotToggle, ResizableAILayout } from '@/components/features/AIChatSidebar';
 import { exportBusinessCaseToPDF } from '@/core/services';
 import { calculateBusinessMetrics } from '@/core/engine';
 import { DataManagementModule } from './modules/DataManagementModule';
@@ -227,8 +227,8 @@ export function BusinessCaseAnalyzer() {
 
   // Main analysis interface with tabs
   return (
-    <div className="flex h-screen overflow-hidden">
-      <div className="flex-1 overflow-auto container mx-auto p-4 sm:p-6 space-y-6">
+    <ResizableAILayout>
+      <div className="container mx-auto p-4 sm:p-6 space-y-6">
       {/* Header - Responsive layout */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
         {/* Left side: Back button, icon, and title */}
@@ -353,7 +353,6 @@ export function BusinessCaseAnalyzer() {
         </TabsContent>
       </Tabs>
       </div>
-      <AICopilotSidebar />
-    </div>
+    </ResizableAILayout>
   );
 }
