@@ -10,6 +10,9 @@ export * from './utils';
 export * from './calculators/business-calculator-full';
 export * from './calculators/market-calculator';
 
+// Export evidence trail
+export * from './evidence-trail-builder';
+
 // Re-export commonly used utilities
 export {
   calculateGeometricGrowth,

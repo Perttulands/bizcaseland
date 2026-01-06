@@ -5,13 +5,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, Calendar, Target, AlertTriangle, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Calendar, Target, AlertTriangle, BarChart3, PieChart as PieChartIcon, Search } from 'lucide-react';
 import { useBusinessData } from '@/core/contexts';
-import { BusinessData } from '@/core/types';
+import { BusinessData, EvidenceContext } from '@/core/types';
 import { useToast } from '@/hooks/use-toast';
 import { calculateBusinessMetrics, formatCurrency } from '@/core/engine';
 import { setNestedValue } from '@/core/engine';
 import { SensitivityAnalysis } from './SensitivityAnalysis';
+import { EvidenceTrailPanel } from './EvidenceTrailPanel';
 
 export function CashFlowStatement() {
   const { data: businessData, updateData } = useBusinessData();
@@ -19,6 +20,8 @@ export function CashFlowStatement() {
   const [hoveredCell, setHoveredCell] = useState<{row: string, month: number} | null>(null);
   const [driverValues, setDriverValues] = useState<{[key: string]: number}>({});
   const baselineRef = useRef(businessData);
+  const [evidenceContext, setEvidenceContext] = useState<EvidenceContext | null>(null);
+  const [isEvidencePanelOpen, setIsEvidencePanelOpen] = useState(false);
 
   // Get drivers before early return
   const drivers = businessData?.drivers || [];
@@ -66,7 +69,7 @@ export function CashFlowStatement() {
         ...prev,
         [driverKey]: value
       };
-      
+
       // Apply changes immediately to global data
       let modified = businessData;
       for (const driver of drivers) {
@@ -76,9 +79,20 @@ export function CashFlowStatement() {
         }
       }
       updateData(modified);
-      
+
       return newValues;
     });
+  };
+
+  const openEvidenceTrail = (metricKey: string, metricLabel: string, value: number, month?: number) => {
+    setEvidenceContext({
+      metricKey,
+      metricLabel,
+      value,
+      month,
+      currency: businessData.meta?.currency || 'EUR'
+    });
+    setIsEvidencePanelOpen(true);
   };
 
   const formatDecimal = (amount: number) => {
@@ -280,6 +294,10 @@ export function CashFlowStatement() {
           <p className="text-xs text-muted-foreground">
             Monthly cash flow projection with full P&L structure
           </p>
+          <p className="text-xs text-muted-foreground/70 flex items-center gap-1 mt-1">
+            <Search className="h-3 w-3" />
+            Double-click any cell to view its evidence trail
+          </p>
         </CardHeader>
       </Card>
 
@@ -343,11 +361,17 @@ export function CashFlowStatement() {
                           const assumptions = getAssumptions(row.key, month.month);
                           
                           return (
-                            <td 
-                              key={month.month} 
+                            <td
+                              key={month.month}
                               className="px-2 py-1 text-center border-l border-border relative cursor-pointer hover:bg-muted/30 transition-colors"
                               onMouseEnter={() => setHoveredCell({row: row.key, month: month.month})}
                               onMouseLeave={() => setHoveredCell(null)}
+                              onDoubleClick={() => {
+                                if (typeof value === 'number') {
+                                  openEvidenceTrail(row.key, row.label.trim(), value, month.month);
+                                }
+                              }}
+                              title="Double-click to view evidence trail"
                             >
                              {typeof value === 'number' ? (
                                  <span className={`font-mono text-xs ${getValueColor(value, row.key)}`}>
@@ -400,10 +424,20 @@ export function CashFlowStatement() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
-        <Card className={`shadow-card ${monthlyData.reduce((s, m) => s + m.revenue, 0) >= 0 ? 'bg-gradient-success' : 'bg-gradient-danger'}`}>
+        <Card
+          className={`shadow-card cursor-pointer hover:ring-2 hover:ring-white/30 transition-all group ${monthlyData.reduce((s, m) => s + m.revenue, 0) >= 0 ? 'bg-gradient-success' : 'bg-gradient-danger'}`}
+          onClick={() => openEvidenceTrail(
+            'totalRevenue',
+            isCostSavingsModel ? 'Total Benefits' : 'Total Revenue',
+            monthlyData.reduce((sum, m) => sum + m.revenue, 0)
+          )}
+        >
           <CardContent className="p-3">
             <div className="text-center">
-              <p className="text-sm text-white/80 mb-1">{isCostSavingsModel ? 'Total Benefits' : 'Total Revenue'}</p>
+              <p className="text-sm text-white/80 mb-1 flex items-center justify-center gap-1">
+                {isCostSavingsModel ? 'Total Benefits' : 'Total Revenue'}
+                <Search className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </p>
               <p className="text-xl font-extrabold text-white">
                 {formatCurrency(monthlyData.reduce((sum, m) => sum + m.revenue, 0), currency)}
               </p>
@@ -411,10 +445,16 @@ export function CashFlowStatement() {
           </CardContent>
         </Card>
 
-        <Card className={`shadow-card ${calculatedMetrics.npv >= 0 ? 'bg-gradient-success' : 'bg-gradient-danger'}`}>
+        <Card
+          className={`shadow-card cursor-pointer hover:ring-2 hover:ring-white/30 transition-all group ${calculatedMetrics.npv >= 0 ? 'bg-gradient-success' : 'bg-gradient-danger'}`}
+          onClick={() => openEvidenceTrail('npv', 'Net Present Value', calculatedMetrics.npv)}
+        >
           <CardContent className="p-3">
             <div className="text-center">
-              <p className="text-sm text-white/80 mb-1">Net Present Value</p>
+              <p className="text-sm text-white/80 mb-1 flex items-center justify-center gap-1">
+                Net Present Value
+                <Search className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </p>
               <p className="text-xl font-extrabold text-white">
                 {formatCurrency(calculatedMetrics.npv, currency)}
               </p>
@@ -422,10 +462,16 @@ export function CashFlowStatement() {
           </CardContent>
         </Card>
 
-        <Card className={`shadow-card ${calculatedMetrics.netProfit >= 0 ? 'bg-gradient-success' : 'bg-gradient-danger'}`}>
+        <Card
+          className={`shadow-card cursor-pointer hover:ring-2 hover:ring-white/30 transition-all group ${calculatedMetrics.netProfit >= 0 ? 'bg-gradient-success' : 'bg-gradient-danger'}`}
+          onClick={() => openEvidenceTrail('netProfit', 'Net Profit', calculatedMetrics.netProfit)}
+        >
           <CardContent className="p-3">
             <div className="text-center">
-              <p className="text-sm text-white/80 mb-1">Net Profit</p>
+              <p className="text-sm text-white/80 mb-1 flex items-center justify-center gap-1">
+                Net Profit
+                <Search className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </p>
               <p className="text-xl font-extrabold text-white">
                 {formatCurrency(calculatedMetrics.netProfit, currency)}
               </p>
@@ -433,10 +479,16 @@ export function CashFlowStatement() {
           </CardContent>
         </Card>
 
-        <Card className={`shadow-card ${calculatedMetrics.breakEvenMonth ? 'bg-gradient-success' : 'bg-gradient-danger'}`}>
+        <Card
+          className={`shadow-card cursor-pointer hover:ring-2 hover:ring-white/30 transition-all group ${calculatedMetrics.breakEvenMonth ? 'bg-gradient-success' : 'bg-gradient-danger'}`}
+          onClick={() => openEvidenceTrail('breakEvenMonth', 'Break-even Point', calculatedMetrics.breakEvenMonth)}
+        >
           <CardContent className="p-3">
             <div className="text-center">
-              <p className="text-sm text-white/80 mb-1">Break-even Point</p>
+              <p className="text-sm text-white/80 mb-1 flex items-center justify-center gap-1">
+                Break-even Point
+                <Search className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </p>
               <p className="text-xl font-extrabold text-white">
                 {calculatedMetrics.breakEvenMonth > 0
                   ? `Month ${calculatedMetrics.breakEvenMonth}`
@@ -676,6 +728,13 @@ export function CashFlowStatement() {
         baselineRef={baselineRef}
         driverValues={driverValues}
         onDriverChange={handleDriverChange}
+      />
+
+      {/* Evidence Trail Panel */}
+      <EvidenceTrailPanel
+        isOpen={isEvidencePanelOpen}
+        onClose={() => setIsEvidencePanelOpen(false)}
+        context={evidenceContext}
       />
     </div>
   );

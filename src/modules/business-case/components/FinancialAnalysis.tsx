@@ -1,20 +1,23 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, DollarSign, Calendar, Users, Target, AlertCircle, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Calendar, Users, Target, AlertCircle, BarChart3, Search } from 'lucide-react';
 import { useBusinessData } from '@/core/contexts';
-import { BusinessData } from '@/core/types';
+import { BusinessData, EvidenceContext } from '@/core/types';
 import { calculateBusinessMetrics, formatCurrency, formatPercent, calculateBreakEven } from '@/core/engine';
 import { setNestedValue, getNestedValue } from '@/core/engine';
 import { SensitivityAnalysis } from './SensitivityAnalysis';
+import { EvidenceTrailPanel } from './EvidenceTrailPanel';
 
 // Helper functions for driver manipulation - now using safe utilities
 // Note: The imported getNestedValue and setNestedValue from utils should be used instead
 
 export function FinancialAnalysis() {
   const { data: businessData, updateData } = useBusinessData();
-  
+
   const [driverValues, setDriverValues] = useState<{[key: string]: number}>({});
+  const [evidenceContext, setEvidenceContext] = useState<EvidenceContext | null>(null);
+  const [isEvidencePanelOpen, setIsEvidencePanelOpen] = useState(false);
   // baselineRef holds the original JSON data so we can compare current values
   // against the original baseline even after the global data is updated.
   const baselineRef = useRef(businessData);
@@ -90,7 +93,7 @@ export function FinancialAnalysis() {
         ...prev,
         [driverKey]: value
       };
-      
+
       // Apply changes immediately to global data
       let modified = businessData;
       for (const driver of drivers) {
@@ -100,9 +103,19 @@ export function FinancialAnalysis() {
         }
       }
       updateData(modified);
-      
+
       return newValues;
     });
+  };
+
+  const openEvidenceTrail = (metricKey: string, metricLabel: string, value: number) => {
+    setEvidenceContext({
+      metricKey,
+      metricLabel,
+      value,
+      currency: businessData.meta.currency
+    });
+    setIsEvidencePanelOpen(true);
   };
 
   return (
@@ -117,12 +130,20 @@ export function FinancialAnalysis() {
 
       {/* Key Financial Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="bg-gradient-success shadow-card">
+        <Card
+          className="bg-gradient-success shadow-card cursor-pointer hover:ring-2 hover:ring-white/30 transition-all group"
+          onClick={() => openEvidenceTrail(
+            'totalRevenue',
+            businessData.meta.business_model === 'cost_savings' ? 'Total Benefits (5Y)' : 'Total Revenue (5Y)',
+            calculatedMetrics.totalRevenue
+          )}
+        >
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-financial-success-foreground/80">
+                <p className="text-sm text-financial-success-foreground/80 flex items-center gap-1">
                   {businessData.meta.business_model === 'cost_savings' ? 'Total Benefits (5Y)' : 'Total Revenue (5Y)'}
+                  <Search className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </p>
                 <p className="text-2xl font-bold text-white">{formatCurrency(calculatedMetrics.totalRevenue, businessData.meta.currency)}</p>
               </div>
@@ -131,11 +152,17 @@ export function FinancialAnalysis() {
           </CardContent>
         </Card>
 
-        <Card className={calculatedMetrics.netProfit >= 0 ? "bg-gradient-success shadow-card" : "bg-gradient-danger shadow-card"}>
+        <Card
+          className={`${calculatedMetrics.netProfit >= 0 ? "bg-gradient-success shadow-card" : "bg-gradient-danger shadow-card"} cursor-pointer hover:ring-2 hover:ring-white/30 transition-all group`}
+          onClick={() => openEvidenceTrail('netProfit', 'Net Profit (5Y)', calculatedMetrics.netProfit)}
+        >
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-white/80">Net Profit (5Y)</p>
+                <p className="text-sm text-white/80 flex items-center gap-1">
+                  Net Profit (5Y)
+                  <Search className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </p>
                 <p className="text-2xl font-bold text-white">{formatCurrency(calculatedMetrics.netProfit, businessData.meta.currency)}</p>
               </div>
               <DollarSign className="h-8 w-8 text-white" />
@@ -143,11 +170,17 @@ export function FinancialAnalysis() {
           </CardContent>
         </Card>
 
-        <Card className={calculatedMetrics.npv >= 0 ? "bg-gradient-success shadow-card" : "bg-gradient-danger shadow-card"}>
+        <Card
+          className={`${calculatedMetrics.npv >= 0 ? "bg-gradient-success shadow-card" : "bg-gradient-danger shadow-card"} cursor-pointer hover:ring-2 hover:ring-white/30 transition-all group`}
+          onClick={() => openEvidenceTrail('npv', 'Net Present Value', calculatedMetrics.npv)}
+        >
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-white/80">Net Present Value</p>
+                <p className="text-sm text-white/80 flex items-center gap-1">
+                  Net Present Value
+                  <Search className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </p>
                 <p className="text-2xl font-bold text-white">{formatCurrency(calculatedMetrics.npv, businessData.meta.currency)}</p>
               </div>
               <Target className="h-8 w-8 text-white" />
@@ -160,14 +193,24 @@ export function FinancialAnalysis() {
       <Card className="bg-gradient-card shadow-card">
         <CardHeader>
           <CardTitle>Performance Indicators</CardTitle>
+          <p className="text-xs text-muted-foreground">Click any metric to see its evidence trail</p>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="text-center p-4 bg-muted/50 rounded-lg">
+            <div
+              className="text-center p-4 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 hover:ring-1 hover:ring-financial-primary/50 transition-all group"
+              onClick={() => openEvidenceTrail('paybackPeriod', 'Payback Period', calculatedMetrics.paybackPeriod)}
+            >
               <div className="text-3xl font-bold text-financial-primary mb-2">{calculatedMetrics.paybackPeriod > 0 ? calculatedMetrics.paybackPeriod : "N/A"}</div>
-              <div className="text-sm text-muted-foreground">Payback Period (months)</div>
+              <div className="text-sm text-muted-foreground flex items-center justify-center gap-1">
+                Payback Period (months)
+                <Search className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
             </div>
-            <div className={`text-center p-4 bg-muted/50 rounded-lg ${calculatedMetrics.irr >= 0 && calculatedMetrics.irr <= 1 && calculatedMetrics.irr !== -999 ? 'text-financial-success' : 'text-financial-danger'}`}>
+            <div
+              className={`text-center p-4 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 hover:ring-1 hover:ring-financial-primary/50 transition-all group ${calculatedMetrics.irr >= 0 && calculatedMetrics.irr <= 1 && calculatedMetrics.irr !== -999 ? 'text-financial-success' : 'text-financial-danger'}`}
+              onClick={() => openEvidenceTrail('irr', 'Internal Rate of Return', calculatedMetrics.irr)}
+            >
               <div className="text-3xl font-bold mb-2">
                 {calculatedMetrics.irr === -999 || calculatedMetrics.irr < -1 || calculatedMetrics.irr > 1 ? (
                   <span className="text-financial-danger">-</span>
@@ -175,15 +218,30 @@ export function FinancialAnalysis() {
                   formatPercent(calculatedMetrics.irr)
                 )}
               </div>
-              <div className="text-sm text-muted-foreground">Internal Rate of Return</div>
+              <div className="text-sm text-muted-foreground flex items-center justify-center gap-1">
+                Internal Rate of Return
+                <Search className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
             </div>
-            <div className="text-center p-4 bg-muted/50 rounded-lg">
+            <div
+              className="text-center p-4 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 hover:ring-1 hover:ring-financial-primary/50 transition-all group"
+              onClick={() => openEvidenceTrail('totalInvestmentRequired', 'Required Investment', calculatedMetrics.totalInvestmentRequired)}
+            >
               <div className="text-3xl font-bold text-financial-warning mb-2">{formatCurrency(calculatedMetrics.totalInvestmentRequired, businessData.meta.currency)}</div>
-              <div className="text-sm text-muted-foreground">Required Investment to Break-even</div>
+              <div className="text-sm text-muted-foreground flex items-center justify-center gap-1">
+                Required Investment to Break-even
+                <Search className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
             </div>
-            <div className="text-center p-4 bg-muted/50 rounded-lg">
+            <div
+              className="text-center p-4 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 hover:ring-1 hover:ring-financial-primary/50 transition-all group"
+              onClick={() => openEvidenceTrail('breakEvenMonth', 'Break-even Month', calculatedMetrics.breakEvenMonth)}
+            >
               <div className="text-3xl font-bold text-financial-warning mb-2">{calculatedMetrics.breakEvenMonth}</div>
-              <div className="text-sm text-muted-foreground">Break-even (months)</div>
+              <div className="text-sm text-muted-foreground flex items-center justify-center gap-1">
+                Break-even (months)
+                <Search className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
             </div>
           </div>
         </CardContent>
@@ -539,6 +597,13 @@ export function FinancialAnalysis() {
           </CardContent>
         </Card>
       )}
+
+      {/* Evidence Trail Panel */}
+      <EvidenceTrailPanel
+        isOpen={isEvidencePanelOpen}
+        onClose={() => setIsEvidencePanelOpen(false)}
+        context={evidenceContext}
+      />
     </div>
   );
 }
