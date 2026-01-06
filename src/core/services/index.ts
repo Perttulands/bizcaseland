@@ -9,6 +9,7 @@ export * from './sync.service';
 export * from './json-validation.service';
 export * from './pdf-export-business.service';
 export * from './pdf-export-market.service';
+export * from './pitch-deck-export.service';
 export * from './ai-service';
 export * from './market-ai-context';
 export * from './web-search-service';
