@@ -12,3 +12,4 @@ export { useMarketData } from './hooks/useMarketData';
 export { useDataStatus } from './hooks/useDataStatus';
 export { useNavigation } from './hooks/useNavigation';
 export { AIProvider, useAI } from './AIContext';
+export { DebateProvider, useDebate } from './DebateContext';

@@ -2,15 +2,17 @@
  * AICopilotSidebar - Main AI chat sidebar component
  * Resizable panel for desktop, Sheet for mobile
  * Supports context-aware prompts for market analysis
+ * Includes Assumption Debate Mode for challenging assumptions
  */
 
-import React, { useCallback, useEffect } from 'react';
-import { Bot, MessageSquare, Settings, Trash2, X, Sparkles } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Bot, MessageSquare, Settings, Trash2, X, Sparkles, Scale, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAI } from '@/core/contexts/AIContext';
-import { useMarketData } from '@/core/contexts';
+import { useMarketData, useDebate } from '@/core/contexts';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 import {
   Sheet,
   SheetContent,
@@ -35,10 +37,14 @@ import { ChatInput } from './ChatInput';
 import { InlineQuickActions } from './MarketAIQuickActions';
 import { buildMarketSystemPrompt, type QuickActionPrompt } from '@/core/services/market-ai-context';
 import { WebSearchPanel } from './WebSearchPanel';
+import { DebatePanel } from './DebatePanel';
+import { EvidenceTrailPanel } from './EvidenceTrailPanel';
 
 // ============================================================================
 // Types
 // ============================================================================
+
+type SidebarMode = 'chat' | 'debate' | 'evidence';
 
 interface AICopilotSidebarProps {
   className?: string;
@@ -149,6 +155,66 @@ function SidebarHeader({
 }
 
 // ============================================================================
+// Mode Tabs Component
+// ============================================================================
+
+interface ModeTabsProps {
+  mode: SidebarMode;
+  onModeChange: (mode: SidebarMode) => void;
+  evidenceCount: number;
+  isDebating: boolean;
+}
+
+function ModeTabs({ mode, onModeChange, evidenceCount, isDebating }: ModeTabsProps) {
+  return (
+    <div className="flex border-b">
+      <button
+        className={cn(
+          'flex-1 py-2 px-3 text-xs font-medium transition-colors flex items-center justify-center gap-1.5',
+          mode === 'chat'
+            ? 'border-b-2 border-primary text-primary'
+            : 'text-muted-foreground hover:text-foreground'
+        )}
+        onClick={() => onModeChange('chat')}
+      >
+        <MessageSquare className="w-3.5 h-3.5" />
+        Chat
+      </button>
+      <button
+        className={cn(
+          'flex-1 py-2 px-3 text-xs font-medium transition-colors flex items-center justify-center gap-1.5',
+          mode === 'debate'
+            ? 'border-b-2 border-primary text-primary'
+            : 'text-muted-foreground hover:text-foreground'
+        )}
+        onClick={() => onModeChange('debate')}
+      >
+        <Scale className="w-3.5 h-3.5" />
+        Debate
+        {isDebating && <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />}
+      </button>
+      <button
+        className={cn(
+          'flex-1 py-2 px-3 text-xs font-medium transition-colors flex items-center justify-center gap-1.5',
+          mode === 'evidence'
+            ? 'border-b-2 border-primary text-primary'
+            : 'text-muted-foreground hover:text-foreground'
+        )}
+        onClick={() => onModeChange('evidence')}
+      >
+        <FileText className="w-3.5 h-3.5" />
+        Evidence
+        {evidenceCount > 0 && (
+          <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
+            {evidenceCount}
+          </Badge>
+        )}
+      </button>
+    </div>
+  );
+}
+
+// ============================================================================
 // Sidebar Content
 // ============================================================================
 
@@ -157,6 +223,8 @@ interface SidebarContentProps {
 }
 
 function SidebarContent({ showMarketContext = false }: SidebarContentProps) {
+  const [mode, setMode] = useState<SidebarMode>('chat');
+
   const {
     state,
     sendMessage,
@@ -169,6 +237,9 @@ function SidebarContent({ showMarketContext = false }: SidebarContentProps) {
     setIsOpen,
     contextType
   } = useAI();
+
+  // Get debate state
+  const { state: debateState, isDebating } = useDebate();
 
   // Get market data for context-aware prompts
   const { data: marketData } = useMarketData();
@@ -183,6 +254,16 @@ function SidebarContent({ showMarketContext = false }: SidebarContentProps) {
 
   // Handle quick action selection
   const handleQuickAction = useCallback((action: QuickActionPrompt) => {
+    // Handle special debate actions
+    if (action.id === 'debate-assumption' || action.id === 'debate-market-size' || action.id === 'debate-growth-rate') {
+      setMode('debate');
+      return;
+    }
+    if (action.id === 'view-evidence-trail') {
+      setMode('evidence');
+      return;
+    }
+
     if (marketData) {
       const marketPrompt = buildMarketSystemPrompt(marketData);
       sendMessageWithPrompt(action.prompt, marketPrompt);
@@ -191,7 +272,7 @@ function SidebarContent({ showMarketContext = false }: SidebarContentProps) {
     }
   }, [marketData, sendMessage, sendMessageWithPrompt]);
 
-  const showQuickActions = showMarketContext && state.messages.length === 0;
+  const showQuickActions = showMarketContext && state.messages.length === 0 && mode === 'chat';
 
   return (
     <div className="flex flex-col h-full">
@@ -205,44 +286,65 @@ function SidebarContent({ showMarketContext = false }: SidebarContentProps) {
         showMarketBadge={showMarketContext}
       />
 
-      <ScrollArea className="flex-1">
-        {showQuickActions ? (
-          <div className="p-4 space-y-4">
-            <div className="text-center py-6">
-              <Sparkles className="h-12 w-12 mx-auto text-primary/50 mb-3" />
-              <h3 className="font-medium text-lg">Market Analysis AI</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                I can help you analyze markets, identify competitors, and build customer segments.
-              </p>
-            </div>
-            <InlineQuickActions onSelectAction={handleQuickAction} />
-          </div>
-        ) : (
-          <ChatMessageList messages={state.messages} isStreaming={state.isStreaming} />
-        )}
-      </ScrollArea>
+      {/* Mode Tabs */}
+      <ModeTabs
+        mode={mode}
+        onModeChange={setMode}
+        evidenceCount={debateState.evidenceTrail.length}
+        isDebating={isDebating}
+      />
 
-      {!showQuickActions && showMarketContext && (
-        <div className="px-3 pt-2 border-t border-border/50">
-          <InlineQuickActions onSelectAction={handleQuickAction} />
-        </div>
+      {/* Content based on mode */}
+      {mode === 'chat' && (
+        <>
+          <ScrollArea className="flex-1">
+            {showQuickActions ? (
+              <div className="p-4 space-y-4">
+                <div className="text-center py-6">
+                  <Sparkles className="h-12 w-12 mx-auto text-primary/50 mb-3" />
+                  <h3 className="font-medium text-lg">Market Analysis AI</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    I can help you analyze markets, identify competitors, and build customer segments.
+                  </p>
+                </div>
+                <InlineQuickActions onSelectAction={handleQuickAction} />
+              </div>
+            ) : (
+              <ChatMessageList messages={state.messages} isStreaming={state.isStreaming} />
+            )}
+          </ScrollArea>
+
+          {!showQuickActions && showMarketContext && (
+            <div className="px-3 pt-2 border-t border-border/50">
+              <InlineQuickActions onSelectAction={handleQuickAction} />
+            </div>
+          )}
+
+          <WebSearchPanel />
+
+          <ChatInput
+            onSend={(msg) => {
+              if (showMarketContext && marketData) {
+                const marketPrompt = buildMarketSystemPrompt(marketData);
+                sendMessageWithPrompt(msg, marketPrompt);
+              } else {
+                sendMessage(msg);
+              }
+            }}
+            onCancel={cancelStream}
+            isLoading={state.isStreaming}
+            placeholder={showMarketContext ? "Ask about market analysis..." : "Ask about your business case..."}
+          />
+        </>
       )}
 
-      <WebSearchPanel />
+      {mode === 'debate' && (
+        <DebatePanel className="flex-1" />
+      )}
 
-      <ChatInput
-        onSend={(msg) => {
-          if (showMarketContext && marketData) {
-            const marketPrompt = buildMarketSystemPrompt(marketData);
-            sendMessageWithPrompt(msg, marketPrompt);
-          } else {
-            sendMessage(msg);
-          }
-        }}
-        onCancel={cancelStream}
-        isLoading={state.isStreaming}
-        placeholder={showMarketContext ? "Ask about market analysis..." : "Ask about your business case..."}
-      />
+      {mode === 'evidence' && (
+        <EvidenceTrailPanel className="flex-1" />
+      )}
     </div>
   );
 }

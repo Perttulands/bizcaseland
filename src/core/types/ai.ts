@@ -204,3 +204,129 @@ export function createResearchSource(
     snippet,
   };
 }
+
+// ============================================================================
+// Assumption Debate Types
+// ============================================================================
+
+/**
+ * Represents a single argument in a debate (bull or bear case)
+ */
+export interface DebateArgument {
+  readonly id: string;
+  readonly type: 'bull' | 'bear';
+  readonly headline: string;           // Short summary of the argument
+  readonly reasoning: string;          // Detailed explanation
+  readonly evidence: readonly string[];  // Supporting evidence/data points
+  readonly confidence: number;         // 0-1 confidence score
+  readonly sources?: readonly ResearchSource[];
+}
+
+/**
+ * Represents a complete debate round for an assumption
+ */
+export interface DebateRound {
+  readonly id: string;
+  readonly assumption: string;         // The assumption being debated
+  readonly assumptionPath?: string;    // JSON path to the assumption in data
+  readonly currentValue?: unknown;     // Current value of the assumption
+  readonly bullCase: DebateArgument;
+  readonly bearCase: DebateArgument;
+  readonly createdAt: string;
+  readonly userVerdict?: 'bull' | 'bear' | 'neutral';
+  readonly userNotes?: string;         // User's reasoning for their choice
+  readonly adjustedValue?: unknown;    // Value user adjusted to
+}
+
+/**
+ * Evidence trail entry - records user decisions from debates
+ */
+export interface EvidenceTrailEntry {
+  readonly id: string;
+  readonly debateRoundId: string;
+  readonly assumption: string;
+  readonly originalValue?: unknown;
+  readonly finalValue?: unknown;
+  readonly verdict: 'bull' | 'bear' | 'neutral';
+  readonly reasoning: string;          // Why user made this decision
+  readonly timestamp: string;
+}
+
+/**
+ * State for the debate feature
+ */
+export interface DebateState {
+  readonly activeDebate: DebateRound | null;
+  readonly debateHistory: readonly DebateRound[];
+  readonly evidenceTrail: readonly EvidenceTrailEntry[];
+  readonly isGenerating: boolean;
+}
+
+// ============================================================================
+// Debate Utility Functions
+// ============================================================================
+
+/**
+ * Generate a unique ID for debate rounds
+ */
+export function generateDebateId(): string {
+  return `debate-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/**
+ * Generate a unique ID for debate arguments
+ */
+export function generateArgumentId(): string {
+  return `arg-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/**
+ * Generate a unique ID for evidence trail entries
+ */
+export function generateEvidenceId(): string {
+  return `evidence-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/**
+ * Create a new debate round
+ */
+export function createDebateRound(
+  assumption: string,
+  bullCase: DebateArgument,
+  bearCase: DebateArgument,
+  options?: {
+    assumptionPath?: string;
+    currentValue?: unknown;
+  }
+): DebateRound {
+  return {
+    id: generateDebateId(),
+    assumption,
+    assumptionPath: options?.assumptionPath,
+    currentValue: options?.currentValue,
+    bullCase,
+    bearCase,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Create an evidence trail entry from a resolved debate
+ */
+export function createEvidenceEntry(
+  debateRound: DebateRound,
+  verdict: 'bull' | 'bear' | 'neutral',
+  reasoning: string,
+  finalValue?: unknown
+): EvidenceTrailEntry {
+  return {
+    id: generateEvidenceId(),
+    debateRoundId: debateRound.id,
+    assumption: debateRound.assumption,
+    originalValue: debateRound.currentValue,
+    finalValue,
+    verdict,
+    reasoning,
+    timestamp: new Date().toISOString(),
+  };
+}
