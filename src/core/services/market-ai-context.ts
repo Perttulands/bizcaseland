@@ -149,7 +149,7 @@ export interface QuickActionPrompt {
   id: string;
   label: string;
   icon: string;
-  category: 'sizing' | 'competitive' | 'customer' | 'strategy';
+  category: 'sizing' | 'competitive' | 'customer' | 'strategy' | 'debate';
   prompt: string;
   description: string;
 }
@@ -265,6 +265,40 @@ export const MARKET_QUICK_ACTIONS: QuickActionPrompt[] = [
     category: 'strategy',
     prompt: 'Outline a go-to-market strategy including target segments, positioning statement, value proposition, marketing channels, and sales approach.',
     description: 'Plan go-to-market strategy'
+  },
+
+  // Assumption Debate
+  {
+    id: 'debate-assumption',
+    label: 'Challenge Assumption',
+    icon: 'scale',
+    category: 'debate',
+    prompt: 'I want to challenge an assumption in my analysis. Please help me think through it by presenting both bull and bear cases.',
+    description: 'Get bull/bear analysis on any assumption'
+  },
+  {
+    id: 'debate-market-size',
+    label: 'Debate Market Size',
+    icon: 'scale',
+    category: 'debate',
+    prompt: 'Challenge my market sizing assumptions. Present bull case (why the market could be larger) and bear case (why it could be smaller) with evidence.',
+    description: 'Challenge market sizing assumptions'
+  },
+  {
+    id: 'debate-growth-rate',
+    label: 'Debate Growth Rate',
+    icon: 'scale',
+    category: 'debate',
+    prompt: 'Challenge my growth rate assumptions. Present bull case (faster growth scenario) and bear case (slower growth scenario) with supporting evidence.',
+    description: 'Challenge growth rate assumptions'
+  },
+  {
+    id: 'view-evidence-trail',
+    label: 'View Evidence Trail',
+    icon: 'file-text',
+    category: 'debate',
+    prompt: 'Show my evidence trail - the history of assumptions I have challenged and decisions I have made.',
+    description: 'Review your debate decisions history'
   },
 ];
 
