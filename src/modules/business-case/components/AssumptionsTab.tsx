@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { TrendingUp, TrendingDown, DollarSign, Users, Settings, Info, Calculator, Target, Clock, Zap, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Users, Settings, Info, Calculator, Target, Clock, Zap, BarChart3, Scale } from 'lucide-react';
 import { useBusinessData } from '@/core/contexts';
 import { EditableValueCell, EditableRationaleCell } from '@/components/common';
 import { SensitivityDriverBadge } from './SensitivityDriverBadge';
+import { AssumptionDebateDialog, EvidenceTrailPanel } from '@/components/features/AssumptionDebate';
 
 interface SensitivityDriver {
   key: string;
@@ -35,6 +37,42 @@ export function AssumptionsTab() {
   const { data, updateAssumption, addDriver, removeDriver, updateDriverRange } = useBusinessData();
   const [hoveredCell, setHoveredCell] = useState<string | null>(null);
   const [changedValuePaths, setChangedValuePaths] = useState<Set<string>>(new Set());
+
+  // Debate mode state
+  const [debateOpen, setDebateOpen] = useState(false);
+  const [debateAssumption, setDebateAssumption] = useState<{
+    label: string;
+    value: number | string;
+    unit: string;
+    rationale: string;
+    category: string;
+    dataPath?: string;
+  } | null>(null);
+  const [showEvidenceTrail, setShowEvidenceTrail] = useState(false);
+
+  // Handle opening debate dialog for an assumption
+  const handleChallenge = (row: AssumptionRow) => {
+    if (row.value === undefined || !row.dataPath) return;
+    setDebateAssumption({
+      label: row.label.trim(),
+      value: row.value,
+      unit: row.unit || '',
+      rationale: row.rationale || '',
+      category: row.category,
+      dataPath: row.dataPath,
+    });
+    setDebateOpen(true);
+  };
+
+  // Handle value update from debate
+  const handleDebateValueUpdate = (newValue: number | string, reasoning: string) => {
+    if (debateAssumption?.dataPath) {
+      updateAssumption(debateAssumption.dataPath, newValue);
+      // Update rationale with reasoning
+      const rationalePath = debateAssumption.dataPath.replace('.value', '.rationale');
+      updateAssumption(rationalePath, reasoning);
+    }
+  };
 
   if (!data) {
     return (
@@ -847,6 +885,17 @@ export function AssumptionsTab() {
                   <th className="text-center px-4 py-3 font-medium text-sm">Value</th>
                   <th className="text-center px-4 py-3 font-medium text-sm">Unit</th>
                   <th className="text-left px-4 py-3 font-medium text-sm">Rationale</th>
+                  <th className="text-center px-2 py-3 font-medium text-xs w-20">
+                    <Tooltip>
+                      <TooltipTrigger className="flex items-center gap-1">
+                        <Scale className="h-3 w-3" />
+                        Debate
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">Challenge this assumption with AI analysis</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -854,14 +903,14 @@ export function AssumptionsTab() {
                   const rowClasses = getRowClasses(row);
                   
                   if (row.category === 'spacer') {
-                    return <tr key={index} className={rowClasses}><td colSpan={5}></td></tr>;
+                    return <tr key={index} className={rowClasses}><td colSpan={6}></td></tr>;
                   }
 
                   if (row.category === 'header') {
                     const Icon = row.icon;
                     return (
                       <tr key={index} className={rowClasses}>
-                        <td colSpan={5} className="px-4 py-3">
+                        <td colSpan={6} className="px-4 py-3">
                           <div className="flex items-center space-x-2">
                             <Icon className={`h-4 w-4 ${row.color}`} />
                             <span className="font-semibold text-base">{row.label}</span>
@@ -937,6 +986,22 @@ export function AssumptionsTab() {
                                 onUpdate={handleRationaleUpdate}
                                 needsUpdate={rationaleNeedsUpdate(row.dataPath)}
                               />
+                            </td>
+                            <td className="px-2 py-3 text-center">
+                              {row.value !== undefined && row.dataPath && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleChallenge(row);
+                                  }}
+                                  className="h-7 px-2 text-xs hover:bg-primary/10"
+                                >
+                                  <Scale className="h-3 w-3 mr-1" />
+                                  Debate
+                                </Button>
+                              )}
                             </td>
                           </tr>
                         </TooltipTrigger>
@@ -1016,6 +1081,30 @@ export function AssumptionsTab() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Evidence Trail Toggle */}
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowEvidenceTrail(!showEvidenceTrail)}
+          className="gap-2"
+        >
+          <Scale className="h-4 w-4" />
+          {showEvidenceTrail ? 'Hide' : 'Show'} Evidence Trail
+        </Button>
+      </div>
+
+      {/* Evidence Trail Panel */}
+      {showEvidenceTrail && <EvidenceTrailPanel className="mt-4" />}
+
+      {/* Assumption Debate Dialog */}
+      <AssumptionDebateDialog
+        open={debateOpen}
+        onOpenChange={setDebateOpen}
+        assumption={debateAssumption}
+        onValueUpdate={handleDebateValueUpdate}
+      />
     </div>
   );
 }
