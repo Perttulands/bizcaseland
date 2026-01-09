@@ -330,3 +330,98 @@ export function createEvidenceEntry(
     timestamp: new Date().toISOString(),
   };
 }
+
+// ============================================================================
+// Voice Interrogation Types
+// ============================================================================
+
+/**
+ * Voice recognition status
+ */
+export type VoiceStatus = 'idle' | 'listening' | 'processing' | 'speaking' | 'error';
+
+/**
+ * Voice command types that can be parsed from speech
+ */
+export type VoiceCommandType =
+  | 'ask_question'      // General question to AI
+  | 'what_if'           // What-if scenario: "What if we raise prices 10%?"
+  | 'update_value'      // Direct update: "Set market size to 500 million"
+  | 'navigate'          // Navigation: "Show me the market analysis"
+  | 'action'            // Actions: "Read the summary", "Export to PDF"
+  | 'unknown';
+
+/**
+ * Parsed voice command
+ */
+export interface VoiceCommand {
+  readonly type: VoiceCommandType;
+  readonly rawText: string;           // Original transcribed text
+  readonly intent: string;            // Parsed intent description
+  readonly parameters?: {
+    readonly field?: string;          // Field to update (for what_if, update_value)
+    readonly value?: string | number; // New value
+    readonly change?: string;         // Change description (e.g., "increase by 10%")
+  };
+  readonly confidence: number;        // 0-1 recognition confidence
+  readonly timestamp: string;
+}
+
+/**
+ * Voice settings for TTS
+ */
+export interface VoiceSettings {
+  readonly voice?: string;            // Voice name/ID
+  readonly rate: number;              // Speech rate (0.5-2)
+  readonly pitch: number;             // Voice pitch (0.5-2)
+  readonly volume: number;            // Volume (0-1)
+}
+
+/**
+ * State for voice features
+ */
+export interface VoiceState {
+  readonly status: VoiceStatus;
+  readonly isSupported: boolean;      // Whether browser supports speech APIs
+  readonly currentTranscript: string; // Live transcript while speaking
+  readonly lastCommand: VoiceCommand | null;
+  readonly commandHistory: readonly VoiceCommand[];
+  readonly settings: VoiceSettings;
+  readonly error: string | null;
+  readonly isMuted: boolean;          // TTS muted
+}
+
+/**
+ * Default voice settings
+ */
+export const DEFAULT_VOICE_SETTINGS: VoiceSettings = {
+  rate: 1.0,
+  pitch: 1.0,
+  volume: 0.8,
+};
+
+// ============================================================================
+// Voice Utility Functions
+// ============================================================================
+
+/**
+ * Generate a unique ID for voice commands
+ */
+export function generateVoiceCommandId(): string {
+  return `voice-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/**
+ * Check if speech recognition is supported
+ */
+export function isSpeechRecognitionSupported(): boolean {
+  return typeof window !== 'undefined' &&
+    ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+}
+
+/**
+ * Check if speech synthesis is supported
+ */
+export function isSpeechSynthesisSupported(): boolean {
+  return typeof window !== 'undefined' && 'speechSynthesis' in window;
+}
