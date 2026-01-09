@@ -34,11 +34,7 @@ import {
 } from '@/components/ui/tooltip';
 import { ChatMessageList } from './ChatMessage';
 import { ChatInput } from './ChatInput';
-import { InlineQuickActions } from './MarketAIQuickActions';
-import { buildMarketSystemPrompt, type QuickActionPrompt } from '@/core/services/market-ai-context';
 import { WebSearchPanel } from './WebSearchPanel';
-import { DebatePanel } from './DebatePanel';
-import { EvidenceTrailPanel } from './EvidenceTrailPanel';
 
 // ============================================================================
 // Types
@@ -286,12 +282,17 @@ export function SidebarContent({ showMarketContext = false }: SidebarContentProp
         showMarketBadge={showMarketContext}
       />
 
-      {/* Mode Tabs */}
-      <ModeTabs
-        mode={mode}
-        onModeChange={setMode}
-        evidenceCount={debateState.evidenceTrail.length}
-        isDebating={isDebating}
+      <ScrollArea className="flex-1">
+        <ChatMessageList messages={state.messages} isStreaming={state.isStreaming} />
+      </ScrollArea>
+
+      <WebSearchPanel />
+
+      <ChatInput
+        onSend={sendMessage}
+        onCancel={cancelStream}
+        isLoading={state.isStreaming}
+        placeholder="Ask about your business case..."
       />
 
       {/* Content based on mode */}
