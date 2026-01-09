@@ -104,6 +104,20 @@ export interface MarketStructure {
   readonly barriers_description: string;
 }
 
+export interface CompetitorPricing {
+  readonly base_price?: ValueWithRationale;
+  readonly pricing_model?: string; // 'subscription' | 'per-unit' | 'freemium' | 'enterprise'
+  readonly pricing_tier_low?: ValueWithRationale;
+  readonly pricing_tier_high?: ValueWithRationale;
+}
+
+export interface CompetitorFeature {
+  readonly name: string;
+  readonly has_feature: boolean;
+  readonly notes?: string;
+  readonly source?: string;
+}
+
 export interface Competitor {
   readonly name: string;
   readonly market_share: ValueWithRationale;
@@ -114,6 +128,15 @@ export interface Competitor {
   readonly competitive_response: string;
   readonly x_position?: number;
   readonly y_position?: number;
+  // Extended fields for competitive intelligence matrix
+  readonly website?: string;
+  readonly pricing?: CompetitorPricing;
+  readonly features?: readonly CompetitorFeature[];
+  readonly founded_year?: number;
+  readonly employee_count?: ValueWithRationale;
+  readonly funding?: ValueWithRationale;
+  readonly headquarters?: string;
+  readonly data_sources?: readonly string[]; // URLs/references for all data
 }
 
 export interface CompetitiveAdvantage {

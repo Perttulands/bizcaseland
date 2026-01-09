@@ -42,6 +42,7 @@ import { AICopilotSidebar, AICopilotToggle } from '@/components/features/AIChatS
 // Import all market analysis modules
 import { MarketSizingModule } from './modules/MarketSizingModule';
 import { CompetitiveIntelligenceModule } from './modules/CompetitiveIntelligenceModule';
+import { CompetitorMatrixGenerator } from './modules/CompetitorMatrixGenerator';
 import { CustomerAnalysisModule } from './modules/CustomerAnalysisModule';
 import { StrategicPlanningModule } from './modules/StrategicPlanningModule';
 import { OpportunityAssessmentModule } from './modules/OpportunityAssessmentModule';
@@ -147,6 +148,13 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
       icon: Trophy,
       description: 'Competitor analysis and positioning',
       color: 'bg-red-500'
+    },
+    {
+      id: 'ci-matrix',
+      title: 'CI Matrix',
+      icon: BarChart3,
+      description: 'Auto-generate competitor grid from web research',
+      color: 'bg-blue-500'
     },
     {
       id: 'customer',
@@ -775,6 +783,13 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
             marketData={marketData}
             onDataUpdate={handleDataUpdate}
             metrics={suiteMetrics}
+          />
+        </TabsContent>
+
+        <TabsContent value="ci-matrix" className="space-y-6">
+          <CompetitorMatrixGenerator
+            marketData={marketData}
+            onDataUpdate={handleDataUpdate}
           />
         </TabsContent>
 
