@@ -15,6 +15,9 @@ export * from './market';
 // Export all AI types
 export * from './ai';
 
+// Export all evidence trail types
+export * from './evidence-trail';
+
 // Re-export commonly used types for convenience
 export type {
   // Common
