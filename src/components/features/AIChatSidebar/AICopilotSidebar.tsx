@@ -219,8 +219,6 @@ interface SidebarContentProps {
 }
 
 export function SidebarContent({ showMarketContext = false }: SidebarContentProps) {
-  const [mode, setMode] = useState<SidebarMode>('chat');
-
   const {
     state,
     sendMessage,

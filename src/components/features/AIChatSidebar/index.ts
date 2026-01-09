@@ -6,3 +6,4 @@ export { AICopilotSidebar, AICopilotToggle, SidebarContent } from './AICopilotSi
 export { ChatMessage, ChatMessageList } from './ChatMessage';
 export { ChatInput } from './ChatInput';
 export { WebSearchPanel } from './WebSearchPanel';
+export { ResizableAILayout } from './ResizableAILayout';

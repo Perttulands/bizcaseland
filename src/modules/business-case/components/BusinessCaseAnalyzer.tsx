@@ -34,8 +34,8 @@ import { VolumeAnalysisTab } from './VolumeAnalysisTab';
 import { useBusinessData, useMarketData, useNavigation } from '@/core/contexts';
 import { BusinessData } from '@/core/types';
 import { ThemeToggle } from '@/components/features/ThemeToggle';
-import { AICopilotSidebar, AICopilotToggle } from '@/components/features/AIChatSidebar';
-import { exportBusinessCaseToPDF, exportToPitchDeck } from '@/core/services';
+import { AICopilotToggle, ResizableAILayout } from '@/components/features/AIChatSidebar';
+import { exportBusinessCaseToPDF } from '@/core/services';
 import { calculateBusinessMetrics } from '@/core/engine';
 import { DataManagementModule } from './modules/DataManagementModule';
 
