@@ -23,6 +23,7 @@ import {
   RotateCcw,
   FileDown,
   BarChart3,
+  Presentation,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -30,16 +31,17 @@ import { FinancialAnalysis } from './FinancialAnalysis';
 import { AssumptionsTab } from './AssumptionsTab';
 import { CashFlowStatement } from './CashFlowStatement';
 import { VolumeAnalysisTab } from './VolumeAnalysisTab';
-import { useBusinessData, useNavigation } from '@/core/contexts';
+import { useBusinessData, useMarketData, useNavigation } from '@/core/contexts';
 import { BusinessData } from '@/core/types';
 import { ThemeToggle } from '@/components/features/ThemeToggle';
-import { AICopilotToggle, ResizableAILayout } from '@/components/features/AIChatSidebar';
-import { exportBusinessCaseToPDF } from '@/core/services';
+import { AICopilotSidebar, AICopilotToggle } from '@/components/features/AIChatSidebar';
+import { exportBusinessCaseToPDF, exportToPitchDeck } from '@/core/services';
 import { calculateBusinessMetrics } from '@/core/engine';
 import { DataManagementModule } from './modules/DataManagementModule';
 
 export function BusinessCaseAnalyzer() {
   const { data: jsonData, updateData, clearData } = useBusinessData();
+  const { data: marketData } = useMarketData();
   const { syncFromStorage } = useNavigation();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -166,6 +168,40 @@ export function BusinessCaseAnalyzer() {
       toast({
         title: "Export Failed",
         description: "Failed to generate PDF report. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const exportAsPitchDeck = async () => {
+    if (!jsonData) {
+      toast({
+        title: "No Data",
+        description: "No data available to export.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      toast({
+        title: "Generating Pitch Deck...",
+        description: "Creating your investor-ready presentation.",
+      });
+
+      const calculations = calculateBusinessMetrics(jsonData);
+      await exportToPitchDeck(jsonData, marketData || undefined, calculations);
+
+      toast({
+        title: "Pitch Deck Exported ✓",
+        description: "Your PowerPoint pitch deck has been downloaded.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Pitch deck export failed:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to generate pitch deck. Please try again.",
         variant: "destructive",
       });
     }
@@ -305,6 +341,16 @@ export function BusinessCaseAnalyzer() {
             <FileDown className="h-4 w-4 mr-1" />
             <span className="hidden sm:inline">Export PDF</span>
             <span className="sm:hidden">PDF</span>
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={exportAsPitchDeck}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Presentation className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">Pitch Deck</span>
+            <span className="sm:hidden">PPTX</span>
           </Button>
         </div>
       </div>
