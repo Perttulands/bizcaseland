@@ -37,7 +37,7 @@ import { useMarketData, useNavigation } from '@/core/contexts';
 import { MarketData } from '@/core/types';
 import { MarketSuiteMetrics, calculateSuiteMetrics, validateMarketSuiteData } from '@/core/engine/calculators/market-suite-calculations';
 import { ThemeToggle } from '@/components/features/ThemeToggle';
-import { AICopilotToggle, ResizableAILayout } from '@/components/features/AIChatSidebar';
+import { AICopilotSidebar, AICopilotToggle } from '@/components/features/AIChatSidebar';
 
 // Import all market analysis modules
 import { MarketSizingModule } from './modules/MarketSizingModule';
@@ -509,8 +509,8 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
 
   // Main analysis interface with tabs
   return (
-    <ResizableAILayout showMarketContext>
-      <div className="container mx-auto p-4 sm:p-6 space-y-6">
+    <div className="flex h-screen overflow-hidden">
+      <div className="flex-1 overflow-auto container mx-auto p-4 sm:p-6 space-y-6">
       {/* Header - Responsive layout */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
         {/* Left side: Back button, icon, and title */}
@@ -816,6 +816,7 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
         </TabsContent>
       </Tabs>
       </div>
-    </ResizableAILayout>
+      <AICopilotSidebar />
+    </div>
   );
 }

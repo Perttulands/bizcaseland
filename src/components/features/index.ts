@@ -14,19 +14,3 @@ export { SharedDataManager } from './SharedDataManager';
 export { ThemeToggle } from './ThemeToggle';
 export { ResearchDocPanel, ResearchBadge, useResearchDocuments } from './ResearchDocPanel';
 export { AICopilotSidebar, AICopilotToggle, ChatMessage, ChatMessageList, ChatInput } from './AIChatSidebar';
-
-// Evidence Trail Visualization (bi-72e)
-export {
-  EvidenceTrailTree,
-  EvidenceTrailPanel,
-  EvidenceTrailCell,
-  EvidenceTrailButton,
-  useEvidenceTrail,
-} from './EvidenceTrail';
-
-// What-If Playground (bi-md5)
-export {
-  WhatIfPlayground,
-  WhatIfSlider,
-  PRESET_SCENARIOS,
-} from './WhatIfPlayground';

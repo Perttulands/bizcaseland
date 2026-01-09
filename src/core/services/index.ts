@@ -18,4 +18,3 @@ export { storageService, STORAGE_KEYS } from './storage.service';
 export { validationService } from './validation.service';
 export { syncService } from './sync.service';
 export { aiService, AVAILABLE_MODELS } from './ai-service';
-export { webSearchService, TRUSTED_DOMAINS } from './web-search-service';
