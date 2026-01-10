@@ -32,11 +32,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { ChatMessageList } from './ChatMessage';
+import { AgentMessageList } from './AgentMessageBlock';
+import { PendingChangesBar } from './PendingChangesBar';
 import { ChatInput } from './ChatInput';
 import { InlineQuickActions } from './MarketAIQuickActions';
 import { InlineBusinessQuickActions } from './BusinessAIQuickActions';
-import { SuggestionApprovalPanel } from './SuggestionApprovalPanel';
 import { buildMarketSystemPrompt, type QuickActionPrompt } from '@/core/services/market-ai-context';
 import { buildBusinessSystemPrompt, type BusinessQuickActionPrompt } from '@/core/services/business-ai-context';
 import { WebSearchPanel } from './WebSearchPanel';
@@ -397,7 +397,14 @@ export function SidebarContent({ showMarketContext = false, showBusinessContext 
                 <InlineBusinessQuickActions onSelectAction={handleBusinessQuickAction} />
               </div>
             ) : (
-              <ChatMessageList messages={state.messages} isStreaming={state.isStreaming} />
+              <AgentMessageList
+                messages={state.messages}
+                suggestions={pendingSuggestions}
+                onApplySuggestion={handleAcceptSuggestion}
+                onDismissSuggestion={rejectSuggestion}
+                appliedSuggestionIds={new Set()} 
+                isStreaming={state.isStreaming}
+              />
             )}
           </ScrollArea>
 
@@ -413,13 +420,12 @@ export function SidebarContent({ showMarketContext = false, showBusinessContext 
             </div>
           )}
 
-          {/* Suggestion Approval Panel */}
-          <SuggestionApprovalPanel
+          {/* Pending Changes Bar - sticky at bottom */}
+          <PendingChangesBar
             suggestions={pendingSuggestions}
-            onAccept={handleAcceptSuggestion}
-            onReject={rejectSuggestion}
-            onAcceptAll={handleAcceptAll}
-            onRejectAll={rejectAllSuggestions}
+            appliedIds={new Set()}
+            onApplyAll={handleAcceptAll}
+            onDismissAll={rejectAllSuggestions}
           />
 
           <WebSearchPanel />

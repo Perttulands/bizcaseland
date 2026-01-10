@@ -13,3 +13,8 @@ export { DebatePanel } from './DebatePanel';
 export { EvidenceTrailPanel } from './EvidenceTrailPanel';
 export { ResizableAILayout } from './ResizableAILayout';
 export { VoiceControlPanel, VoiceButton } from './VoiceControlPanel';
+
+// Agent-style chat components
+export { AgentMessageBlock, AgentMessageList, ToolCallBlock, ThinkingBlock, ErrorBlock } from './AgentMessageBlock';
+export { DiffBlock, CompactDiffBlock } from './DiffBlock';
+export { PendingChangesBar, CompactPendingChangesBar } from './PendingChangesBar';
