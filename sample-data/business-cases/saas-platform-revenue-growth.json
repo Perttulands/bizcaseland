@@ -1,0 +1,163 @@
+{
+  "schema_version": "1.0",
+  "meta": {
+    "title": "SaaS Platform Revenue Growth",
+    "description": "New SaaS platform launch targeting small-to-medium businesses with subscription-based pricing model, focusing on customer acquisition and revenue growth.",
+    "business_model": "recurring",
+    "currency": "EUR",
+    "periods": 60,
+    "frequency": "monthly"
+  },
+  "assumptions": {
+    "pricing": {
+      "avg_unit_price": { 
+        "value": 99.0, 
+        "unit": "EUR_per_month", 
+        "rationale": "Competitive pricing for SMB segment based on market research and competitor analysis" 
+      },
+      "yearly_adjustments": {
+        "pricing_factors": [
+          { "year": 1, "factor": 1.0, "rationale": "Launch pricing to establish market presence" },
+          { "year": 2, "factor": 1.05, "rationale": "5% price increase based on value-added features" },
+          { "year": 3, "factor": 1.08, "rationale": "8% cumulative increase reflecting market maturity" }
+        ],
+        "price_overrides": []
+      }
+    },
+    "financial": {
+      "interest_rate": { 
+        "value": 0.12, 
+        "unit": "ratio", 
+        "rationale": "12% discount rate reflecting technology startup risk profile" 
+      }
+    },
+    "customers": {
+      "churn_pct": { 
+        "value": 0.05, 
+        "unit": "monthly_churn_rate", 
+        "rationale": "5% monthly churn typical for SMB SaaS platforms based on industry benchmarks" 
+      },
+      "segments": [
+        {
+          "id": "small_business",
+          "label": "Small Business (1-50 employees)",
+          "name": "Small Business (1-50 employees)",
+          "rationale": "Target small businesses with 1-50 employees as primary customer segment",
+          "volume": {
+            "base_value": 50,
+            "unit": "customers_per_month",
+            "rationale": "Conservative launch target of 50 new customers per month",
+            "pattern_type": "geometric_growth",
+            "growth_rate": 0.15,
+            "growth_rationale": "15% monthly growth through digital marketing and referrals"
+          }
+        },
+        {
+          "id": "medium_business", 
+          "label": "Medium Business (51-200 employees)",
+          "name": "Medium Business (51-200 employees)",
+          "rationale": "Target medium businesses with 51-200 employees through direct sales",
+          "volume": {
+            "base_value": 25,
+            "unit": "customers_per_month",
+            "rationale": "Targeted enterprise sales approach yielding 25 customers monthly",
+            "pattern_type": "linear_growth",
+            "growth_rate": 5,
+            "growth_rationale": "Linear growth of 5 additional customers per month through sales team expansion"
+          }
+        }
+      ]
+    },
+    "unit_economics": {
+      "cogs_pct": { 
+        "value": 0.20, 
+        "unit": "percentage_of_revenue", 
+        "rationale": "20% COGS including hosting, support, and infrastructure costs" 
+      },
+      "cac": { 
+        "value": 150.0, 
+        "unit": "EUR_per_customer", 
+        "rationale": "Customer acquisition cost through digital marketing and sales activities" 
+      }
+    },
+    "opex": [
+      { 
+        "name": "Sales & Marketing", 
+        "value": { 
+          "value": 25000.0, 
+          "unit": "EUR_per_month", 
+          "rationale": "Aggressive marketing spend for customer acquisition and brand building" 
+        } 
+      },
+      { 
+        "name": "R&D", 
+        "value": { 
+          "value": 40000.0, 
+          "unit": "EUR_per_month", 
+          "rationale": "Development team for platform features and maintenance" 
+        } 
+      },
+      { 
+        "name": "G&A", 
+        "value": { 
+          "value": 15000.0, 
+          "unit": "EUR_per_month", 
+          "rationale": "Administrative overhead including finance, HR, and operations" 
+        } 
+      }
+    ],
+    "capex": [
+      {
+        "name": "Platform Development & Infrastructure",
+        "timeline": {
+          "type": "time_series",
+          "pattern_type": "front_loaded",
+          "series": [
+            { "period": 1, "value": 150000.0, "unit": "EUR", "rationale": "Initial platform development and cloud infrastructure setup" },
+            { "period": 7, "value": 50000.0, "unit": "EUR", "rationale": "Major feature release and security enhancements" },
+            { "period": 13, "value": 75000.0, "unit": "EUR", "rationale": "Platform scaling and advanced analytics features" },
+            { "period": 25, "value": 40000.0, "unit": "EUR", "rationale": "AI/ML capabilities and integration enhancements" }
+          ]
+        }
+      }
+    ]
+  },
+  "drivers": [
+    {
+      "key": "unit_price",
+      "path": "assumptions.pricing.avg_unit_price.value",
+      "range": [79, 89, 99, 109, 119],
+      "rationale": "Price sensitivity analysis across different SaaS subscription tiers"
+    },
+    {
+      "key": "small_biz_growth_rate",
+      "path": "assumptions.customers.segments[0].volume.growth_rate",
+      "range": [0.08, 0.10, 0.12, 0.15, 0.18],
+      "rationale": "Monthly growth rate sensitivity for small business customer acquisition"
+    },
+    {
+      "key": "medium_biz_growth_rate", 
+      "path": "assumptions.customers.segments[1].volume.growth_rate",
+      "range": [8, 12, 15, 20, 25],
+      "rationale": "Monthly linear growth sensitivity for medium business customer acquisition"
+    },
+    {
+      "key": "churn_rate",
+      "path": "assumptions.customers.churn_pct.value",
+      "range": [0.02, 0.035, 0.05, 0.065, 0.08],
+      "rationale": "Monthly churn rate sensitivity analysis for subscription retention"
+    },
+    {
+      "key": "cac_cost",
+      "path": "assumptions.unit_economics.cac.value",
+      "range": [150, 200, 250, 300, 350],
+      "rationale": "Customer acquisition cost sensitivity across different marketing channels"
+    },
+    {
+      "key": "sales_marketing_spend",
+      "path": "assumptions.opex[0].value.value",
+      "range": [25000, 35000, 45000, 55000, 65000],
+      "rationale": "Sales & Marketing operational expense sensitivity for growth investment"
+    }
+  ]
+}

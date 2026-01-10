@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "perttuland"
+  },
+  "targets": {
+    "perttuland": {
+      "hosting": {
+        "bizcase": [
+          "bizcase"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

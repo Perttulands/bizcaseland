@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Financial Analysis Theme - Light Mode */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    
+    --primary: 220 14.3% 95.9%;
+    --primary-foreground: 220.9 39.3% 11%;
+    
+    --secondary: 220 14.3% 95.9%;
+    --secondary-foreground: 220.9 39.3% 11%;
+    
+    --muted: 220 14.3% 95.9%;
+    --muted-foreground: 220 8.9% 46.1%;
+    
+    --accent: 220 14.3% 95.9%;
+    --accent-foreground: 220.9 39.3% 11%;
+    
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 224 71.4% 4.1%;
+    
+    --radius: 0.75rem;
+    
+    /* Financial Theme Colors */
+    --financial-primary: 220 70% 50%;
+    --financial-primary-foreground: 0 0% 100%;
+    --financial-success: 120 60% 50%;
+    --financial-success-foreground: 0 0% 100%;
+    --financial-warning: 45 93% 47%;
+    --financial-warning-foreground: 0 0% 100%;
+    --financial-danger: 0 72% 51%;
+    --financial-danger-foreground: 0 0% 100%;
+    
+    /* Dashboard Colors */
+    --dashboard-sidebar: 240 6% 10%;
+    --dashboard-main: 0 0% 100%;
+    --dashboard-card: 0 0% 100%;
+    --dashboard-accent: 220 70% 50%;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(220 70% 50%), hsl(220 70% 60%));
+    --gradient-success: linear-gradient(135deg, hsl(120 60% 50%), hsl(120 60% 60%));
+    --gradient-secondary: linear-gradient(135deg, hsl(240 70% 50%), hsl(240 70% 60%));
+    --gradient-accent: linear-gradient(135deg, hsl(280 70% 50%), hsl(280 70% 60%));
+    --gradient-danger: linear-gradient(135deg, hsl(0 72% 51%), hsl(0 72% 61%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(220 13% 98%));
+    
+    /* Shadows */
+    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+    --shadow-elevation: 0 10px 25px -5px hsl(0 0% 0% / 0.1), 0 8px 10px -6px hsl(0 0% 0% / 0.1);
+  }
+
+  .dark {
+    /* Financial Analysis Theme - Dark Mode (Default) */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    
+    --card: 240 6% 8%;
+    --card-foreground: 0 0% 98%;
+    
+    --popover: 240 6% 8%;
+    --popover-foreground: 0 0% 98%;
+    
+    --primary: 220 70% 50%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 0 0% 98%;
+    
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 64.9%;
+    
+    --accent: 240 4% 16%;
+    --accent-foreground: 0 0% 98%;
+    
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 240 6% 12%;
+    --input: 240 6% 12%;
+    --ring: 220 70% 50%;
+    
+    /* Financial Theme Colors - Dark */
+    --financial-primary: 220 70% 50%;
+    --financial-primary-foreground: 0 0% 100%;
+    --financial-success: 120 50% 45%;
+    --financial-success-foreground: 0 0% 100%;
+    --financial-warning: 45 93% 47%;
+    --financial-warning-foreground: 240 10% 3.9%;
+    --financial-danger: 0 72% 51%;
+    --financial-danger-foreground: 0 0% 100%;
+    
+    /* Dashboard Colors - Dark */
+    --dashboard-sidebar: 240 6% 6%;
+    --dashboard-main: 240 10% 3.9%;
+    --dashboard-card: 240 6% 8%;
+    --dashboard-accent: 220 70% 50%;
+    
+    /* Gradients - Dark */
+    --gradient-primary: linear-gradient(135deg, hsl(220 70% 50%), hsl(220 70% 40%));
+    --gradient-success: linear-gradient(135deg, hsl(120 50% 45%), hsl(120 50% 35%));
+    --gradient-secondary: linear-gradient(135deg, hsl(240 70% 50%), hsl(240 70% 40%));
+    --gradient-accent: linear-gradient(135deg, hsl(280 70% 50%), hsl(280 70% 40%));
+    --gradient-danger: linear-gradient(135deg, hsl(0 72% 51%), hsl(0 72% 41%));
+    --gradient-card: linear-gradient(145deg, hsl(240 6% 8%), hsl(240 6% 10%));
+    
+    /* Shadows - Dark */
+    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.3), 0 1px 2px -1px hsl(0 0% 0% / 0.3);
+    --shadow-elevation: 0 25px 50px -12px hsl(0 0% 0% / 0.25);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}

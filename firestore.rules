@@ -1,0 +1,32 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Shared database - apps authenticate via Firebase Auth later
+    // Open for now, secure with auth when ready
+
+    // Business Case documents
+    match /businessCases/{docId} {
+      allow read, write: if true;
+    }
+
+    // Market Analysis documents
+    match /marketAnalyses/{docId} {
+      allow read, write: if true;
+    }
+
+    // User profiles
+    match /userProfiles/{userId} {
+      allow read, write: if true;
+    }
+
+    // Chat history
+    match /chatHistory/{chatId} {
+      allow read, write: if true;
+    }
+
+    // Shared settings
+    match /settings/{settingId} {
+      allow read, write: if true;
+    }
+  }
+}

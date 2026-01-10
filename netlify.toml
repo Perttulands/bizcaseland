@@ -1,0 +1,41 @@
+# Netlify configuration for Bizcaseland
+
+[build]
+  # Build output directory (Vite default)
+  publish = "dist"
+  # Build command
+  command = "npm run build"
+  # Functions directory
+  functions = "netlify/functions"
+
+[functions]
+  # Use esbuild for TypeScript functions
+  node_bundler = "esbuild"
+  # Include source maps for debugging
+  included_files = ["netlify/functions/**/*.ts"]
+
+# Development settings for `netlify dev`
+[dev]
+  command = "npm run dev"
+  targetPort = 5173
+  port = 8888
+  autoLaunch = false
+
+# Redirect SPA routes to index.html (except API and static files)
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers for security and CORS
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type"

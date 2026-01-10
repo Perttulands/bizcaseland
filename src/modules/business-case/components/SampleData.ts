@@ -1,0 +1,133 @@
+// Sample data for Business Case Analyzer
+export const BUSINESS_CASE_SAMPLE_DATA = {
+  "schema_version": "1.0",
+  "meta": {
+    "title": "Payroll Process Automation",
+    "description": "Automation of payroll process to reduce manual administrative time, errors, and compliance risk, resulting in significant cost savings and efficiency gains.",
+    "business_model": "cost_savings",
+    "currency": "EUR",
+    "periods": 60,
+    "frequency": "monthly"
+  },
+  "assumptions": {
+    "pricing": {
+      "avg_unit_price": { "value": 0.0, "unit": "n/a", "rationale": "Not applicable for cost_savings model; no unit pricing or sales involved." },
+      "yearly_adjustments": {
+        "pricing_factors": [
+          { "year": 1, "factor": 1.0, "rationale": "Not applicable; no pricing adjustments in cost_savings model." },
+          { "year": 2, "factor": 1.0, "rationale": "Not applicable; no pricing adjustments in cost_savings model." }
+        ],
+        "price_overrides": [
+          { "period": 13, "price": 0.0, "rationale": "Not applicable; no specific pricing overrides in cost_savings model." }
+        ]
+      }
+    },
+    "financial": {
+      "interest_rate": { "value": 0.10, "unit": "ratio", "rationale": "10% discount rate for NPV and IRR calculations; aligns with hurdle rate." }
+    },
+    "customers": {
+      "churn_pct": { "value": 0.0, "unit": "n/a", "rationale": "Churn is not relevant to cost_savings business model." },
+      "segments": []
+    },
+    "unit_economics": {
+      "cogs_pct": { "value": 0.0, "unit": "n/a", "rationale": "No cost of goods sold; this is a process automation initiative." },
+      "cac": { "value": 0.0, "unit": "n/a", "rationale": "Customer acquisition cost is irrelevant to payroll automation." }
+    },
+    "opex": [
+      { "name": "Sales & Marketing", "value": { "value": 0.0, "unit": "n/a", "rationale": "Not impacted by payroll automation." } },
+      { "name": "R&D",              "value": { "value": 0.0, "unit": "n/a", "rationale": "Not impacted by payroll automation." } },
+      { "name": "G&A",              "value": { "value": 3000.0, "unit": "EUR_per_month", "rationale": "Baseline monthly payroll admin staff costs before automation." } }
+    ],
+    "capex": [
+      {
+        "name": "Payroll Automation Implementation",
+        "timeline": {
+          "type": "time_series",
+          "pattern_type": "linear_growth",
+          "series": [
+            { "period": 1, "value": 25000.0, "unit": "EUR", "rationale": "Initial investment in automation software, integration, and setup." },
+            { "period": 13, "value": 5000.0, "unit": "EUR", "rationale": "Additional Year 2 system customization and training." }
+          ]
+        }
+      }
+    ],
+    "cost_savings": {
+      "baseline_costs": [
+        {
+          "id": "cost_1",
+          "label": "Payroll Administration",
+          "category": "administrative",
+          "current_monthly_cost": { "value": 3000.0, "unit": "EUR_per_month", "rationale": "Payroll team salary and overhead costs for manual payroll execution." },
+          "savings_potential_pct": { "value": 50.0, "unit": "percentage", "rationale": "Automation expected to cut administrative effort in half." },
+          "implementation_timeline": {
+            "start_month": 7,
+            "ramp_up_months": 6,
+            "full_implementation_month": 12
+          }
+        },
+        {
+          "id": "cost_2",
+          "label": "Error Correction & Compliance",
+          "category": "operational",
+          "current_monthly_cost": { "value": 1000.0, "unit": "EUR_per_month", "rationale": "Time and penalties related to correcting payroll errors and compliance adjustments." },
+          "savings_potential_pct": { "value": 70.0, "unit": "percentage", "rationale": "Automation reduces error-related costs and compliance penalties by ~70%." },
+          "implementation_timeline": {
+            "start_month": 7,
+            "ramp_up_months": 6,
+            "full_implementation_month": 12
+          }
+        }
+      ],
+      "efficiency_gains": [
+        {
+          "id": "efficiency_1",
+          "label": "Faster Payroll Runs",
+          "metric": "hours_per_run",
+          "baseline_value": { "value": 40.0, "unit": "hours_per_month", "rationale": "Manual payroll requires ~40 hours/month across staff." },
+          "improved_value": { "value": 8.0, "unit": "hours_per_month", "rationale": "Automation reduces payroll processing to ~8 hours/month." },
+          "value_per_unit": { "value": 50.0, "unit": "EUR_per_hour", "rationale": "Average fully-loaded cost of payroll staff per hour." },
+          "implementation_timeline": {
+            "start_month": 7,
+            "ramp_up_months": 6,
+            "full_implementation_month": 12
+          }
+        }
+      ]
+    },
+    "growth_settings": {
+      "geom_growth": {
+        "start": { "value": 0, "unit": "n/a", "rationale": "Not used; cost_savings model uses efficiency timelines instead." },
+        "monthly_growth": { "value": 0.0, "unit": "n/a", "rationale": "Not used in cost_savings model." }
+      },
+      "seasonal_growth": {
+        "base_year_total": { "value": 0, "unit": "n/a", "rationale": "Not used; cost_savings does not follow seasonality." },
+        "seasonality_index_12": { "value": [], "unit": "n/a", "rationale": "Not applicable; no seasonality in payroll automation savings." },
+        "yoy_growth": { "value": 0.0, "unit": "n/a", "rationale": "Not used in cost_savings model." }
+      },
+      "linear_growth": {
+        "start": { "value": 0, "unit": "n/a", "rationale": "Not used; cost_savings uses implementation ramp-up instead." },
+        "monthly_flat_increase": { "value": 0, "unit": "n/a", "rationale": "Not used; savings are defined by ramp-up timeline." }
+      }
+    }
+  },
+  "drivers": [
+    {
+      "key": "admin_savings_pct",
+      "path": "assumptions.cost_savings.baseline_costs[0].savings_potential_pct.value",
+      "range": [30, 40, 50, 60, 70],
+      "rationale": "Sensitivity on percentage of payroll admin costs saved via automation."
+    },
+    {
+      "key": "compliance_savings_pct",
+      "path": "assumptions.cost_savings.baseline_costs[1].savings_potential_pct.value",
+      "range": [50, 60, 70, 80, 90],
+      "rationale": "Sensitivity on reduction in compliance and error correction costs."
+    },
+    {
+      "key": "efficiency_hours_saved",
+      "path": "assumptions.cost_savings.efficiency_gains[0].improved_value.value",
+      "range": [10, 12, 8, 6, 4],
+      "rationale": "Sensitivity on hours reduced through automation."
+    }
+  ]
+};
