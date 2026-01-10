@@ -5,7 +5,7 @@
  */
 
 import React, { createContext, useCallback, useContext, useMemo, useReducer, useRef } from 'react';
-import type { AIState, ChatMessage, ResearchDocument } from '@/core/types/ai';
+import type { AIState, AISuggestion, ChatMessage, ResearchDocument } from '@/core/types/ai';
 import { aiService, AVAILABLE_MODELS } from '@/core/services/ai-service';
 
 // ============================================================================
@@ -24,7 +24,11 @@ type AIAction =
   | { type: 'CLEAR_MESSAGES' }
   | { type: 'REMOVE_MESSAGE'; id: string }
   | { type: 'SET_CONTEXT_TYPE'; contextType: AIContextType }
-  | { type: 'SET_SYSTEM_PROMPT'; prompt: string };
+  | { type: 'SET_SYSTEM_PROMPT'; prompt: string }
+  | { type: 'ADD_SUGGESTION'; suggestion: AISuggestion }
+  | { type: 'ACCEPT_SUGGESTION'; id: string }
+  | { type: 'REJECT_SUGGESTION'; id: string }
+  | { type: 'CLEAR_SUGGESTIONS' };
 
 interface AIContextValue {
   state: AIState;
@@ -43,6 +47,13 @@ interface AIContextValue {
   hasApiKey: boolean;
   setApiKey: (key: string) => void;
   clearApiKey: () => void;
+  // Suggestion management
+  addSuggestion: (suggestion: AISuggestion) => void;
+  acceptSuggestion: (id: string) => AISuggestion | undefined;
+  rejectSuggestion: (id: string) => void;
+  acceptAllSuggestions: () => AISuggestion[];
+  rejectAllSuggestions: () => void;
+  pendingSuggestions: readonly AISuggestion[];
 }
 
 // ============================================================================
@@ -126,6 +137,35 @@ function aiReducer(state: ExtendedAIState, action: AIAction): ExtendedAIState {
 
     case 'SET_SYSTEM_PROMPT':
       return { ...state, customSystemPrompt: action.prompt };
+
+    case 'ADD_SUGGESTION':
+      return {
+        ...state,
+        pendingSuggestions: [...state.pendingSuggestions, action.suggestion],
+      };
+
+    case 'ACCEPT_SUGGESTION':
+      return {
+        ...state,
+        pendingSuggestions: state.pendingSuggestions.map(s =>
+          s.id === action.id
+            ? { ...s, status: 'accepted' as const, respondedAt: new Date().toISOString() }
+            : s
+        ),
+      };
+
+    case 'REJECT_SUGGESTION':
+      return {
+        ...state,
+        pendingSuggestions: state.pendingSuggestions.map(s =>
+          s.id === action.id
+            ? { ...s, status: 'rejected' as const, respondedAt: new Date().toISOString() }
+            : s
+        ),
+      };
+
+    case 'CLEAR_SUGGESTIONS':
+      return { ...state, pendingSuggestions: [] };
 
     default:
       return state;
@@ -269,6 +309,43 @@ export function AIProvider({ children }: AIProviderProps) {
     dispatch({ type: 'SET_SYSTEM_PROMPT', prompt });
   }, []);
 
+  // ============================================================================
+  // Suggestion Management
+  // ============================================================================
+
+  const addSuggestion = useCallback((suggestion: AISuggestion) => {
+    dispatch({ type: 'ADD_SUGGESTION', suggestion });
+  }, []);
+
+  const acceptSuggestion = useCallback((id: string): AISuggestion | undefined => {
+    const suggestion = state.pendingSuggestions.find(s => s.id === id);
+    if (suggestion) {
+      dispatch({ type: 'ACCEPT_SUGGESTION', id });
+    }
+    return suggestion;
+  }, [state.pendingSuggestions]);
+
+  const rejectSuggestion = useCallback((id: string) => {
+    dispatch({ type: 'REJECT_SUGGESTION', id });
+  }, []);
+
+  const acceptAllSuggestions = useCallback((): AISuggestion[] => {
+    const pending = state.pendingSuggestions.filter(s => s.status === 'pending');
+    pending.forEach(s => dispatch({ type: 'ACCEPT_SUGGESTION', id: s.id }));
+    return pending;
+  }, [state.pendingSuggestions]);
+
+  const rejectAllSuggestions = useCallback(() => {
+    state.pendingSuggestions
+      .filter(s => s.status === 'pending')
+      .forEach(s => dispatch({ type: 'REJECT_SUGGESTION', id: s.id }));
+  }, [state.pendingSuggestions]);
+
+  const pendingSuggestions = useMemo(
+    () => state.pendingSuggestions.filter(s => s.status === 'pending'),
+    [state.pendingSuggestions]
+  );
+
   const value = useMemo(
     () => ({
       state,
@@ -287,8 +364,15 @@ export function AIProvider({ children }: AIProviderProps) {
       hasApiKey,
       setApiKey,
       clearApiKey,
+      // Suggestion management
+      addSuggestion,
+      acceptSuggestion,
+      rejectSuggestion,
+      acceptAllSuggestions,
+      rejectAllSuggestions,
+      pendingSuggestions,
     }),
-    [state, sendMessage, sendMessageWithPrompt, cancelStream, clearMessages, setModel, setContextType, setSystemPrompt, isOpen, hasApiKey, setApiKey, clearApiKey]
+    [state, sendMessage, sendMessageWithPrompt, cancelStream, clearMessages, setModel, setContextType, setSystemPrompt, isOpen, hasApiKey, setApiKey, clearApiKey, addSuggestion, acceptSuggestion, rejectSuggestion, acceptAllSuggestions, rejectAllSuggestions, pendingSuggestions]
   );
 
   return <AIContext.Provider value={value}>{children}</AIContext.Provider>;

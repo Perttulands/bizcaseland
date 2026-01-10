@@ -35,11 +35,15 @@ import {
 import { ChatMessageList } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { InlineQuickActions } from './MarketAIQuickActions';
+import { InlineBusinessQuickActions } from './BusinessAIQuickActions';
+import { SuggestionApprovalPanel } from './SuggestionApprovalPanel';
 import { buildMarketSystemPrompt, type QuickActionPrompt } from '@/core/services/market-ai-context';
+import { buildBusinessSystemPrompt, type BusinessQuickActionPrompt } from '@/core/services/business-ai-context';
 import { WebSearchPanel } from './WebSearchPanel';
 import { DebatePanel } from './DebatePanel';
 import { EvidenceTrailPanel } from './EvidenceTrailPanel';
 import { APIKeySettings } from './APIKeySettings';
+import { useBusinessData } from '@/core/contexts/hooks/useBusinessData';
 
 // ============================================================================
 // Types
@@ -50,6 +54,7 @@ type SidebarMode = 'chat' | 'debate' | 'evidence';
 interface AICopilotSidebarProps {
   className?: string;
   showMarketContext?: boolean;
+  showBusinessContext?: boolean;
 }
 
 // ============================================================================
@@ -223,9 +228,10 @@ function ModeTabs({ mode, onModeChange, evidenceCount, isDebating }: ModeTabsPro
 
 interface SidebarContentProps {
   showMarketContext?: boolean;
+  showBusinessContext?: boolean;
 }
 
-export function SidebarContent({ showMarketContext = false }: SidebarContentProps) {
+export function SidebarContent({ showMarketContext = false, showBusinessContext = false }: SidebarContentProps) {
   const [mode, setMode] = useState<SidebarMode>('chat');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
@@ -240,7 +246,13 @@ export function SidebarContent({ showMarketContext = false }: SidebarContentProp
     availableModels,
     setIsOpen,
     contextType,
-    hasApiKey
+    hasApiKey,
+    // Suggestion management
+    pendingSuggestions,
+    acceptSuggestion,
+    rejectSuggestion,
+    acceptAllSuggestions,
+    rejectAllSuggestions,
   } = useAI();
 
   // Auto-scroll to bottom when new messages arrive
@@ -262,15 +274,21 @@ export function SidebarContent({ showMarketContext = false }: SidebarContentProp
   // Get market data for context-aware prompts
   const { data: marketData } = useMarketData();
 
-  // Update system prompt when market data changes (for market analysis context)
+  // Get business data for context-aware prompts
+  const { data: businessData } = useBusinessData();
+
+  // Update system prompt when data changes (for context-aware modes)
   useEffect(() => {
     if (showMarketContext && marketData) {
       const marketPrompt = buildMarketSystemPrompt(marketData);
       setSystemPrompt(marketPrompt);
+    } else if (showBusinessContext && businessData) {
+      const businessPrompt = buildBusinessSystemPrompt(businessData);
+      setSystemPrompt(businessPrompt);
     }
-  }, [showMarketContext, marketData, setSystemPrompt]);
+  }, [showMarketContext, showBusinessContext, marketData, businessData, setSystemPrompt]);
 
-  // Handle quick action selection
+  // Handle quick action selection (market)
   const handleQuickAction = useCallback((action: QuickActionPrompt) => {
     // Handle special debate actions
     if (action.id === 'debate-assumption' || action.id === 'debate-market-size' || action.id === 'debate-growth-rate') {
@@ -290,7 +308,34 @@ export function SidebarContent({ showMarketContext = false }: SidebarContentProp
     }
   }, [marketData, sendMessage, sendMessageWithPrompt]);
 
+  // Handle quick action selection (business)
+  const handleBusinessQuickAction = useCallback((action: BusinessQuickActionPrompt) => {
+    if (businessData) {
+      const businessPrompt = buildBusinessSystemPrompt(businessData);
+      sendMessageWithPrompt(action.prompt, businessPrompt);
+    } else {
+      sendMessage(action.prompt);
+    }
+  }, [businessData, sendMessage, sendMessageWithPrompt]);
+
+  // Handle suggestion approval (applies value via DataContext)
+  const handleAcceptSuggestion = useCallback((suggestionId: string) => {
+    const suggestion = acceptSuggestion(suggestionId);
+    if (suggestion) {
+      // The actual value application would be done by the parent component
+      // via the DataContext's updateBusinessAssumption or updateMarketAssumption
+      console.log('Accepted suggestion:', suggestion.path, suggestion.suggestedValue);
+    }
+  }, [acceptSuggestion]);
+
+  const handleAcceptAll = useCallback(() => {
+    const accepted = acceptAllSuggestions();
+    console.log('Accepted all suggestions:', accepted.length);
+  }, [acceptAllSuggestions]);
+
   const showQuickActions = showMarketContext && state.messages.length === 0 && mode === 'chat' && hasApiKey;
+  const showBusinessQuickActions = showBusinessContext && state.messages.length === 0 && mode === 'chat' && hasApiKey;
+  const contextBadge = showMarketContext ? 'Market' : showBusinessContext ? 'Business' : null;
 
   return (
     <div className="flex flex-col h-full max-h-[600px]">
@@ -301,7 +346,7 @@ export function SidebarContent({ showMarketContext = false }: SidebarContentProp
         onModelChange={setModel}
         availableModels={availableModels}
         totalTokens={state.totalTokensUsed}
-        showMarketBadge={showMarketContext}
+        showMarketBadge={!!contextBadge}
       />
 
       {/* Mode Tabs */}
@@ -340,16 +385,42 @@ export function SidebarContent({ showMarketContext = false }: SidebarContentProp
                 </div>
                 <InlineQuickActions onSelectAction={handleQuickAction} />
               </div>
+            ) : showBusinessQuickActions ? (
+              <div className="p-4 space-y-4">
+                <div className="text-center py-6">
+                  <Sparkles className="h-12 w-12 mx-auto text-primary/50 mb-3" />
+                  <h3 className="font-medium text-lg">Business Case AI</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    I can help you validate assumptions, analyze costs, and stress-test your financial model.
+                  </p>
+                </div>
+                <InlineBusinessQuickActions onSelectAction={handleBusinessQuickAction} />
+              </div>
             ) : (
               <ChatMessageList messages={state.messages} isStreaming={state.isStreaming} />
             )}
           </ScrollArea>
 
-          {!showQuickActions && showMarketContext && (
+          {!showQuickActions && !showBusinessQuickActions && showMarketContext && (
             <div className="px-3 pt-2 border-t border-border/50">
               <InlineQuickActions onSelectAction={handleQuickAction} />
             </div>
           )}
+
+          {!showQuickActions && !showBusinessQuickActions && showBusinessContext && (
+            <div className="px-3 pt-2 border-t border-border/50">
+              <InlineBusinessQuickActions onSelectAction={handleBusinessQuickAction} />
+            </div>
+          )}
+
+          {/* Suggestion Approval Panel */}
+          <SuggestionApprovalPanel
+            suggestions={pendingSuggestions}
+            onAccept={handleAcceptSuggestion}
+            onReject={rejectSuggestion}
+            onAcceptAll={handleAcceptAll}
+            onRejectAll={rejectAllSuggestions}
+          />
 
           <WebSearchPanel />
 
@@ -358,6 +429,9 @@ export function SidebarContent({ showMarketContext = false }: SidebarContentProp
               if (showMarketContext && marketData) {
                 const marketPrompt = buildMarketSystemPrompt(marketData);
                 sendMessageWithPrompt(msg, marketPrompt);
+              } else if (showBusinessContext && businessData) {
+                const businessPrompt = buildBusinessSystemPrompt(businessData);
+                sendMessageWithPrompt(msg, businessPrompt);
               } else {
                 sendMessage(msg);
               }
@@ -365,7 +439,7 @@ export function SidebarContent({ showMarketContext = false }: SidebarContentProp
             onCancel={cancelStream}
             isLoading={state.isStreaming}
             disabled={!hasApiKey}
-            placeholder={!hasApiKey ? "Configure API key to chat..." : showMarketContext ? "Ask about market analysis..." : "Ask about your business case..."}
+            placeholder={!hasApiKey ? "Configure API key to chat..." : showMarketContext ? "Ask about market analysis..." : showBusinessContext ? "Ask about your business case..." : "Ask a question..."}
           />
         </>
       )}
@@ -388,9 +462,10 @@ export function SidebarContent({ showMarketContext = false }: SidebarContentProp
 interface DesktopSidebarProps {
   className?: string;
   showMarketContext?: boolean;
+  showBusinessContext?: boolean;
 }
 
-function DesktopSidebar({ className, showMarketContext }: DesktopSidebarProps) {
+function DesktopSidebar({ className, showMarketContext, showBusinessContext }: DesktopSidebarProps) {
   const { isOpen } = useAI();
 
   if (!isOpen) return null;
@@ -402,7 +477,7 @@ function DesktopSidebar({ className, showMarketContext }: DesktopSidebarProps) {
         className
       )}
     >
-      <SidebarContent showMarketContext={showMarketContext} />
+      <SidebarContent showMarketContext={showMarketContext} showBusinessContext={showBusinessContext} />
     </div>
   );
 }
@@ -413,9 +488,10 @@ function DesktopSidebar({ className, showMarketContext }: DesktopSidebarProps) {
 
 interface MobileSidebarProps {
   showMarketContext?: boolean;
+  showBusinessContext?: boolean;
 }
 
-function MobileSidebar({ showMarketContext }: MobileSidebarProps) {
+function MobileSidebar({ showMarketContext, showBusinessContext }: MobileSidebarProps) {
   const { isOpen, setIsOpen } = useAI();
 
   return (
@@ -424,7 +500,7 @@ function MobileSidebar({ showMarketContext }: MobileSidebarProps) {
         <SheetHeader className="sr-only">
           <SheetTitle>AI Assistant</SheetTitle>
         </SheetHeader>
-        <SidebarContent showMarketContext={showMarketContext} />
+        <SidebarContent showMarketContext={showMarketContext} showBusinessContext={showBusinessContext} />
       </SheetContent>
     </Sheet>
   );
@@ -465,14 +541,14 @@ export function AICopilotToggle({ className }: { className?: string }) {
 // Main Component
 // ============================================================================
 
-export function AICopilotSidebar({ className, showMarketContext }: AICopilotSidebarProps) {
+export function AICopilotSidebar({ className, showMarketContext, showBusinessContext }: AICopilotSidebarProps) {
   const isMobile = useIsMobile();
 
   if (isMobile) {
-    return <MobileSidebar showMarketContext={showMarketContext} />;
+    return <MobileSidebar showMarketContext={showMarketContext} showBusinessContext={showBusinessContext} />;
   }
 
-  return <DesktopSidebar className={className} showMarketContext={showMarketContext} />;
+  return <DesktopSidebar className={className} showMarketContext={showMarketContext} showBusinessContext={showBusinessContext} />;
 }
 
 export default AICopilotSidebar;

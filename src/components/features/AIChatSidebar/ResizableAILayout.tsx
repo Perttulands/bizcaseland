@@ -27,6 +27,7 @@ interface ResizableAILayoutProps {
   children: React.ReactNode;
   className?: string;
   showMarketContext?: boolean;
+  showBusinessContext?: boolean;
   defaultSidebarSize?: number;
   minSidebarSize?: number;
   maxSidebarSize?: number;
@@ -57,9 +58,10 @@ function useIsMobile(breakpoint = 768) {
 
 interface MobileSheetProps {
   showMarketContext?: boolean;
+  showBusinessContext?: boolean;
 }
 
-function MobileSheet({ showMarketContext }: MobileSheetProps) {
+function MobileSheet({ showMarketContext, showBusinessContext }: MobileSheetProps) {
   const { isOpen, setIsOpen } = useAI();
 
   return (
@@ -68,7 +70,7 @@ function MobileSheet({ showMarketContext }: MobileSheetProps) {
         <SheetHeader className="sr-only">
           <SheetTitle>AI Assistant</SheetTitle>
         </SheetHeader>
-        <SidebarContent showMarketContext={showMarketContext} />
+        <SidebarContent showMarketContext={showMarketContext} showBusinessContext={showBusinessContext} />
       </SheetContent>
     </Sheet>
   );
@@ -82,6 +84,7 @@ export function ResizableAILayout({
   children,
   className,
   showMarketContext = false,
+  showBusinessContext = false,
   defaultSidebarSize = 25,
   minSidebarSize = 15,
   maxSidebarSize = 40,
@@ -114,7 +117,7 @@ export function ResizableAILayout({
     return (
       <div className={cn('flex h-screen overflow-hidden', className)}>
         <div className="flex-1 overflow-auto">{children}</div>
-        <MobileSheet showMarketContext={showMarketContext} />
+        <MobileSheet showMarketContext={showMarketContext} showBusinessContext={showBusinessContext} />
       </div>
     );
   }
@@ -142,7 +145,7 @@ export function ResizableAILayout({
             className="border-l bg-background"
           >
             <div className="sticky top-0">
-              <SidebarContent showMarketContext={showMarketContext} />
+              <SidebarContent showMarketContext={showMarketContext} showBusinessContext={showBusinessContext} />
             </div>
           </ResizablePanel>
         </>

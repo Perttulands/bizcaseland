@@ -190,7 +190,7 @@ export function BusinessCaseAnalyzer() {
 
   // Main analysis interface with tabs
   return (
-    <ResizableAILayout>
+    <ResizableAILayout showBusinessContext>
       <div className="container mx-auto p-4 sm:p-6 space-y-6">
       {/* Header - Responsive layout */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">

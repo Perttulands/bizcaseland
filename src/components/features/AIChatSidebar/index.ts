@@ -6,6 +6,8 @@ export { AICopilotSidebar, AICopilotToggle, SidebarContent } from './AICopilotSi
 export { ChatMessage, ChatMessageList } from './ChatMessage';
 export { ChatInput } from './ChatInput';
 export { MarketAIQuickActions, InlineQuickActions } from './MarketAIQuickActions';
+export { BusinessAIQuickActions, InlineBusinessQuickActions } from './BusinessAIQuickActions';
+export { SuggestionApprovalPanel } from './SuggestionApprovalPanel';
 export { WebSearchPanel } from './WebSearchPanel';
 export { DebatePanel } from './DebatePanel';
 export { EvidenceTrailPanel } from './EvidenceTrailPanel';
