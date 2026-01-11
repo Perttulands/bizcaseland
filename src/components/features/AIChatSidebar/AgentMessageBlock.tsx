@@ -4,7 +4,8 @@
  * tool calls, thinking blocks, and inline diffs
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
 import {
   Bot,
   User,
@@ -239,8 +240,30 @@ export function AgentMessageBlock({
       <div className="prose prose-sm dark:prose-invert max-w-none">
         {/* Main text content */}
         {message.content && (
-          <div className="text-sm leading-relaxed whitespace-pre-wrap">
-            {message.content}
+          <div className="text-sm leading-relaxed">
+            <ReactMarkdown
+              components={{
+                // Style links
+                a: ({ node, ...props }) => (
+                  <a {...props} className="text-primary underline hover:no-underline" target="_blank" rel="noopener noreferrer" />
+                ),
+                // Ensure code blocks are styled
+                code: ({ node, className, children, ...props }) => {
+                  const isInline = !className;
+                  return isInline ? (
+                    <code className="px-1 py-0.5 bg-muted rounded text-xs font-mono" {...props}>{children}</code>
+                  ) : (
+                    <code className={className} {...props}>{children}</code>
+                  );
+                },
+                // Style pre blocks
+                pre: ({ node, ...props }) => (
+                  <pre className="bg-muted p-3 rounded-md overflow-x-auto text-xs" {...props} />
+                ),
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
             {isStreaming && <StreamingCursor />}
           </div>
         )}
@@ -294,12 +317,33 @@ export function AgentMessageList({
   isStreaming = false,
   className,
 }: AgentMessageListProps) {
-  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isUserNearBottomRef = useRef(true);
+  const lastScrollTimeRef = useRef(0);
 
-  // Auto-scroll to bottom on new messages
-  React.useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  // Track if user is near bottom (within 100px)
+  const handleScroll = useCallback(() => {
+    if (!containerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    isUserNearBottomRef.current = distanceFromBottom < 100;
+  }, []);
+
+  // Smooth scroll to bottom only if user is near bottom, with debouncing
+  useEffect(() => {
+    if (!isUserNearBottomRef.current) return;
+    
+    // Debounce rapid updates during streaming
+    const now = Date.now();
+    if (isStreaming && now - lastScrollTimeRef.current < 100) return;
+    lastScrollTimeRef.current = now;
+
+    // Use requestAnimationFrame for smooth scrolling without layout thrashing
+    requestAnimationFrame(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: isStreaming ? 'auto' : 'smooth' });
+    });
+  }, [messages, messages[messages.length - 1]?.content, isStreaming]);
 
   if (messages.length === 0) {
     return (
@@ -316,7 +360,11 @@ export function AgentMessageList({
   }
 
   return (
-    <div className={cn('flex flex-col', className)}>
+    <div 
+      ref={containerRef}
+      onScroll={handleScroll}
+      className={cn('flex flex-col', className)}
+    >
       {messages.map((message, index) => (
         <AgentMessageBlock
           key={message.id}

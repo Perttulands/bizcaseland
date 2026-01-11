@@ -5,7 +5,7 @@
  * Includes Assumption Debate Mode for challenging assumptions
  */
 
-import React, { useCallback, useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Bot, MessageSquare, Trash2, X, Sparkles, Scale, FileText, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAI } from '@/core/contexts/AIContext';
@@ -269,7 +269,6 @@ interface SidebarContentProps {
 
 export function SidebarContent({ showMarketContext = false, showBusinessContext = false }: SidebarContentProps) {
   const [mode, setMode] = useState<SidebarMode>('chat');
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const {
     state,
@@ -297,19 +296,6 @@ export function SidebarContent({ showMarketContext = false, showBusinessContext 
     clearChatHistory,
     exportChatHistory,
   } = useAI();
-
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollContainer) {
-        // Use requestAnimationFrame to ensure smooth scrolling without layout jumps
-        requestAnimationFrame(() => {
-          scrollContainer.scrollTop = scrollContainer.scrollHeight;
-        });
-      }
-    }
-  }, [state.messages.length, state.messages[state.messages.length - 1]?.content]);
 
   // Get debate state
   const { state: debateState, isDebating } = useDebate();
@@ -410,7 +396,7 @@ export function SidebarContent({ showMarketContext = false, showBusinessContext 
       {/* Content based on mode */}
       {mode === 'chat' && (
         <>
-          <ScrollArea className="flex-1 overflow-hidden" ref={scrollAreaRef}>
+          <ScrollArea className="flex-1 overflow-hidden">
             {!hasApiKey ? (
               <div className="p-4 space-y-4">
                 <div className="text-center py-6">
