@@ -370,7 +370,7 @@ export function SidebarContent({ showMarketContext = false, showBusinessContext 
   const historyStats = getChatHistoryStats();
 
   return (
-    <div className="flex flex-col h-full max-h-[600px]">
+    <div className="flex flex-col h-full overflow-hidden">
       <SidebarHeader
         onClose={() => setIsOpen(false)}
         onClear={clearMessages}
@@ -525,7 +525,7 @@ function DesktopSidebar({ className, showMarketContext, showBusinessContext }: D
   return (
     <div
       className={cn(
-        'w-[380px] min-w-[320px] max-w-[500px] border-l bg-background h-full',
+        'w-[380px] min-w-[320px] max-w-[500px] border-l bg-background h-full overflow-hidden',
         className
       )}
     >
