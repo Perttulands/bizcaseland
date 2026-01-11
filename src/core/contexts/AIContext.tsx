@@ -7,6 +7,8 @@
 import React, { createContext, useCallback, useContext, useMemo, useReducer, useRef } from 'react';
 import type { AIState, AISuggestion, ChatMessage, ResearchDocument } from '@/core/types/ai';
 import { aiService, AVAILABLE_MODELS } from '@/core/services/ai-service';
+import { AI_MODELS, DEFAULT_MODEL_ID, calculateCost, formatCost } from '@/core/config/ai-models';
+import { chatHistoryService } from '@/core/services/chat-history-service';
 
 // ============================================================================
 // Types
@@ -19,7 +21,7 @@ type AIAction =
   | { type: 'UPDATE_LAST_MESSAGE'; content: string }
   | { type: 'SET_STREAMING'; isStreaming: boolean }
   | { type: 'SET_MODEL'; model: string }
-  | { type: 'ADD_TOKENS'; tokens: number }
+  | { type: 'ADD_TOKENS'; tokens: { prompt: number; completion: number; total: number } }
   | { type: 'ADD_RESEARCH_DOC'; document: ResearchDocument }
   | { type: 'CLEAR_MESSAGES' }
   | { type: 'REMOVE_MESSAGE'; id: string }
@@ -29,6 +31,15 @@ type AIAction =
   | { type: 'ACCEPT_SUGGESTION'; id: string }
   | { type: 'REJECT_SUGGESTION'; id: string }
   | { type: 'CLEAR_SUGGESTIONS' };
+
+/** Token usage breakdown */
+export interface TokenUsage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  estimatedCost: number;
+  estimatedCostFormatted: string;
+}
 
 interface AIContextValue {
   state: AIState;
@@ -54,6 +65,13 @@ interface AIContextValue {
   acceptAllSuggestions: () => AISuggestion[];
   rejectAllSuggestions: () => void;
   pendingSuggestions: readonly AISuggestion[];
+  // Token/cost tracking
+  tokenUsage: TokenUsage;
+  // Chat history access
+  getChatHistory: () => ReturnType<typeof chatHistoryService.getHistory>;
+  getChatHistoryStats: () => ReturnType<typeof chatHistoryService.getStats>;
+  clearChatHistory: () => void;
+  exportChatHistory: (format: 'json' | 'csv') => string;
 }
 
 // ============================================================================
@@ -68,6 +86,9 @@ Format responses in markdown for clarity.`;
 interface ExtendedAIState extends AIState {
   contextType: AIContextType;
   customSystemPrompt: string | null;
+  promptTokensUsed: number;
+  completionTokensUsed: number;
+  totalCost: number;
 }
 
 const initialState: ExtendedAIState = {
@@ -75,10 +96,13 @@ const initialState: ExtendedAIState = {
   pendingSuggestions: [],
   researchDocuments: {},
   isStreaming: false,
-  selectedModel: AVAILABLE_MODELS[0].id,
+  selectedModel: DEFAULT_MODEL_ID,
   totalTokensUsed: 0,
   contextType: 'general',
   customSystemPrompt: null,
+  promptTokensUsed: 0,
+  completionTokensUsed: 0,
+  totalCost: 0,
 };
 
 // ============================================================================
@@ -111,8 +135,20 @@ function aiReducer(state: ExtendedAIState, action: AIAction): ExtendedAIState {
     case 'SET_MODEL':
       return { ...state, selectedModel: action.model };
 
-    case 'ADD_TOKENS':
-      return { ...state, totalTokensUsed: state.totalTokensUsed + action.tokens };
+    case 'ADD_TOKENS': {
+      const cost = calculateCost(
+        state.selectedModel,
+        action.tokens.prompt,
+        action.tokens.completion
+      );
+      return {
+        ...state,
+        totalTokensUsed: state.totalTokensUsed + action.tokens.total,
+        promptTokensUsed: state.promptTokensUsed + action.tokens.prompt,
+        completionTokensUsed: state.completionTokensUsed + action.tokens.completion,
+        totalCost: state.totalCost + cost,
+      };
+    }
 
     case 'ADD_RESEARCH_DOC':
       return {
@@ -234,7 +270,14 @@ export function AIProvider({ children }: AIProviderProps) {
           onComplete: (response) => {
             dispatch({ type: 'SET_STREAMING', isStreaming: false });
             if (response.tokenUsage) {
-              dispatch({ type: 'ADD_TOKENS', tokens: response.tokenUsage.total });
+              dispatch({
+                type: 'ADD_TOKENS',
+                tokens: {
+                  prompt: response.tokenUsage.prompt,
+                  completion: response.tokenUsage.completion,
+                  total: response.tokenUsage.total,
+                },
+              });
             }
           },
           onError: (error) => {
@@ -346,6 +389,31 @@ export function AIProvider({ children }: AIProviderProps) {
     [state.pendingSuggestions]
   );
 
+  // ============================================================================
+  // Token/Cost Tracking
+  // ============================================================================
+
+  const tokenUsage: TokenUsage = useMemo(() => ({
+    promptTokens: state.promptTokensUsed,
+    completionTokens: state.completionTokensUsed,
+    totalTokens: state.totalTokensUsed,
+    estimatedCost: state.totalCost,
+    estimatedCostFormatted: formatCost(state.totalCost),
+  }), [state.promptTokensUsed, state.completionTokensUsed, state.totalTokensUsed, state.totalCost]);
+
+  // ============================================================================
+  // Chat History Access
+  // ============================================================================
+
+  const getChatHistory = useCallback(() => chatHistoryService.getHistory(), []);
+  const getChatHistoryStats = useCallback(() => chatHistoryService.getStats(), []);
+  const clearChatHistory = useCallback(() => chatHistoryService.clearHistory(), []);
+  const exportChatHistory = useCallback(
+    (format: 'json' | 'csv') =>
+      format === 'json' ? chatHistoryService.exportAsJSON() : chatHistoryService.exportAsCSV(),
+    []
+  );
+
   const value = useMemo(
     () => ({
       state,
@@ -371,8 +439,15 @@ export function AIProvider({ children }: AIProviderProps) {
       acceptAllSuggestions,
       rejectAllSuggestions,
       pendingSuggestions,
+      // Token/cost tracking
+      tokenUsage,
+      // Chat history access
+      getChatHistory,
+      getChatHistoryStats,
+      clearChatHistory,
+      exportChatHistory,
     }),
-    [state, sendMessage, sendMessageWithPrompt, cancelStream, clearMessages, setModel, setContextType, setSystemPrompt, isOpen, hasApiKey, setApiKey, clearApiKey, addSuggestion, acceptSuggestion, rejectSuggestion, acceptAllSuggestions, rejectAllSuggestions, pendingSuggestions]
+    [state, sendMessage, sendMessageWithPrompt, cancelStream, clearMessages, setModel, setContextType, setSystemPrompt, isOpen, hasApiKey, setApiKey, clearApiKey, addSuggestion, acceptSuggestion, rejectSuggestion, acceptAllSuggestions, rejectAllSuggestions, pendingSuggestions, tokenUsage, getChatHistory, getChatHistoryStats, clearChatHistory, exportChatHistory]
   );
 
   return <AIContext.Provider value={value}>{children}</AIContext.Provider>;

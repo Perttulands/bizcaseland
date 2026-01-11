@@ -11,6 +11,7 @@ export { SuggestionApprovalPanel } from './SuggestionApprovalPanel';
 export { WebSearchPanel } from './WebSearchPanel';
 export { DebatePanel } from './DebatePanel';
 export { EvidenceTrailPanel } from './EvidenceTrailPanel';
+export { ChatHistoryPanel } from './ChatHistoryPanel';
 export { ResizableAILayout } from './ResizableAILayout';
 export { VoiceControlPanel, VoiceButton } from './VoiceControlPanel';
 

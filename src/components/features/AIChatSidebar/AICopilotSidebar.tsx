@@ -6,7 +6,7 @@
  */
 
 import React, { useCallback, useEffect, useState, useRef } from 'react';
-import { Bot, MessageSquare, Trash2, X, Sparkles, Scale, FileText } from 'lucide-react';
+import { Bot, MessageSquare, Trash2, X, Sparkles, Scale, FileText, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAI } from '@/core/contexts/AIContext';
 import { useMarketData, useDebate } from '@/core/contexts';
@@ -42,6 +42,7 @@ import { buildBusinessSystemPrompt, type BusinessQuickActionPrompt } from '@/cor
 import { WebSearchPanel } from './WebSearchPanel';
 import { DebatePanel } from './DebatePanel';
 import { EvidenceTrailPanel } from './EvidenceTrailPanel';
+import { ChatHistoryPanel } from './ChatHistoryPanel';
 import { APIKeySettings } from './APIKeySettings';
 import { useBusinessData } from '@/core/contexts/hooks/useBusinessData';
 
@@ -49,7 +50,7 @@ import { useBusinessData } from '@/core/contexts/hooks/useBusinessData';
 // Types
 // ============================================================================
 
-type SidebarMode = 'chat' | 'debate' | 'evidence';
+type SidebarMode = 'chat' | 'debate' | 'evidence' | 'history';
 
 interface AICopilotSidebarProps {
   className?: string;
@@ -86,6 +87,9 @@ interface SidebarHeaderProps {
   onModelChange: (model: string) => void;
   availableModels: readonly { id: string; name: string; description: string }[];
   totalTokens: number;
+  estimatedCost: string;
+  promptTokens: number;
+  completionTokens: number;
   showMarketBadge?: boolean;
 }
 
@@ -96,6 +100,9 @@ function SidebarHeader({
   onModelChange,
   availableModels,
   totalTokens,
+  estimatedCost,
+  promptTokens,
+  completionTokens,
   showMarketBadge,
 }: SidebarHeaderProps) {
   return (
@@ -114,12 +121,23 @@ function SidebarHeader({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="text-xs text-muted-foreground mr-2">
-                {totalTokens.toLocaleString()} tokens
-              </span>
+              <div className="flex items-center gap-1.5 mr-2 cursor-default">
+                <span className="text-xs text-muted-foreground">
+                  {totalTokens.toLocaleString()} tokens
+                </span>
+                <span className="text-xs font-medium text-green-600 dark:text-green-400">
+                  {estimatedCost}
+                </span>
+              </div>
             </TooltipTrigger>
-            <TooltipContent>
-              <p>Total tokens used this session</p>
+            <TooltipContent side="bottom" className="text-xs">
+              <div className="space-y-1">
+                <p className="font-medium">Token Usage</p>
+                <p>Prompt: {promptTokens.toLocaleString()}</p>
+                <p>Completion: {completionTokens.toLocaleString()}</p>
+                <p>Total: {totalTokens.toLocaleString()}</p>
+                <p className="pt-1 border-t">Estimated cost: {estimatedCost}</p>
+              </div>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -170,10 +188,11 @@ interface ModeTabsProps {
   mode: SidebarMode;
   onModeChange: (mode: SidebarMode) => void;
   evidenceCount: number;
+  historyCount: number;
   isDebating: boolean;
 }
 
-function ModeTabs({ mode, onModeChange, evidenceCount, isDebating }: ModeTabsProps) {
+function ModeTabs({ mode, onModeChange, evidenceCount, historyCount, isDebating }: ModeTabsProps) {
   return (
     <div className="flex border-b">
       <button
@@ -218,6 +237,23 @@ function ModeTabs({ mode, onModeChange, evidenceCount, isDebating }: ModeTabsPro
           </Badge>
         )}
       </button>
+      <button
+        className={cn(
+          'flex-1 py-2 px-3 text-xs font-medium transition-colors flex items-center justify-center gap-1.5',
+          mode === 'history'
+            ? 'border-b-2 border-primary text-primary'
+            : 'text-muted-foreground hover:text-foreground'
+        )}
+        onClick={() => onModeChange('history')}
+      >
+        <History className="w-3.5 h-3.5" />
+        Log
+        {historyCount > 0 && (
+          <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
+            {historyCount}
+          </Badge>
+        )}
+      </button>
     </div>
   );
 }
@@ -253,6 +289,13 @@ export function SidebarContent({ showMarketContext = false, showBusinessContext 
     rejectSuggestion,
     acceptAllSuggestions,
     rejectAllSuggestions,
+    // Token/cost tracking
+    tokenUsage,
+    // Chat history
+    getChatHistory,
+    getChatHistoryStats,
+    clearChatHistory,
+    exportChatHistory,
   } = useAI();
 
   // Auto-scroll to bottom when new messages arrive
@@ -337,6 +380,9 @@ export function SidebarContent({ showMarketContext = false, showBusinessContext 
   const showBusinessQuickActions = showBusinessContext && state.messages.length === 0 && mode === 'chat' && hasApiKey;
   const contextBadge = showMarketContext ? 'Market' : showBusinessContext ? 'Business' : null;
 
+  // Get history stats for badge
+  const historyStats = getChatHistoryStats();
+
   return (
     <div className="flex flex-col h-full max-h-[600px]">
       <SidebarHeader
@@ -345,7 +391,10 @@ export function SidebarContent({ showMarketContext = false, showBusinessContext 
         selectedModel={state.selectedModel}
         onModelChange={setModel}
         availableModels={availableModels}
-        totalTokens={state.totalTokensUsed}
+        totalTokens={tokenUsage.totalTokens}
+        estimatedCost={tokenUsage.estimatedCostFormatted}
+        promptTokens={tokenUsage.promptTokens}
+        completionTokens={tokenUsage.completionTokens}
         showMarketBadge={!!contextBadge}
       />
 
@@ -354,6 +403,7 @@ export function SidebarContent({ showMarketContext = false, showBusinessContext 
         mode={mode}
         onModeChange={setMode}
         evidenceCount={debateState.evidenceTrail.length}
+        historyCount={historyStats.totalEntries}
         isDebating={isDebating}
       />
 
@@ -456,6 +506,16 @@ export function SidebarContent({ showMarketContext = false, showBusinessContext 
 
       {mode === 'evidence' && (
         <EvidenceTrailPanel className="flex-1" />
+      )}
+
+      {mode === 'history' && (
+        <ChatHistoryPanel
+          history={getChatHistory()}
+          stats={historyStats}
+          onClear={clearChatHistory}
+          onExport={exportChatHistory}
+          className="flex-1"
+        />
       )}
     </div>
   );

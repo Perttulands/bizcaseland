@@ -6,6 +6,8 @@
 
 import type { ChatMessage, ChatRole } from '@/core/types/ai';
 import { generateMessageId } from '@/core/types/ai';
+import { AI_MODELS, DEFAULT_MODEL_ID, type AIModelConfig } from '@/core/config/ai-models';
+import { chatHistoryService } from './chat-history-service';
 
 // ============================================================================
 // Types
@@ -44,16 +46,12 @@ export interface StreamCallbacks {
 
 const LITELLM_ENDPOINT = 'https://app-litellmsn66ka.azurewebsites.net';
 const API_KEY_STORAGE_KEY = 'litellm-api-key';
-const DEFAULT_MODEL = 'anthropic/claude-4-5-sonnet-aws';
 const DEFAULT_TEMPERATURE = 0.7;
 const DEFAULT_MAX_TOKENS = 2048;
 const REQUEST_TIMEOUT_MS = 60000; // 60 seconds
 
-// Available models for user selection (from LiteLLM /models endpoint)
-export const AVAILABLE_MODELS = [
-  { id: 'anthropic/claude-4-5-sonnet-aws', name: 'Claude Sonnet 4.5', description: 'Best quality (Recommended)' },
-  { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash', description: 'Fast and cost-effective' },
-] as const;
+// Re-export models from config for backward compatibility
+export const AVAILABLE_MODELS: readonly AIModelConfig[] = AI_MODELS;
 
 // ============================================================================
 // Logging Utilities
@@ -150,7 +148,7 @@ class AIService {
     }
 
     const startTime = Date.now();
-    const model = options.model || DEFAULT_MODEL;
+    const model = options.model || DEFAULT_MODEL_ID;
 
     logLLMRequest(model, messages, options);
 
@@ -188,6 +186,20 @@ class AIService {
 
       logLLMResponse(content, tokenUsage, Date.now() - startTime);
 
+      // Log to chat history
+      const userMessage = messages.find(m => m.role === 'user')?.content || '';
+      const systemPrompt = messages.find(m => m.role === 'system')?.content;
+      chatHistoryService.logEntry({
+        modelId: model,
+        systemPrompt,
+        userMessage,
+        messages,
+        response: content,
+        tokens: tokenUsage,
+        durationMs: Date.now() - startTime,
+        success: true,
+      });
+
       return { content, tokenUsage };
     } catch (error) {
       if (error instanceof Error && error.name === 'TimeoutError') {
@@ -219,7 +231,7 @@ class AIService {
     this.cancelStream();
 
     const startTime = Date.now();
-    const model = options.model || DEFAULT_MODEL;
+    const model = options.model || DEFAULT_MODEL_ID;
 
     logLLMRequest(model, messages, options);
 
@@ -312,6 +324,20 @@ class AIService {
       clearTimeout(timeoutId);
       logLLMResponse(fullContent, tokenUsage, Date.now() - startTime);
 
+      // Log to chat history
+      const userMessage = messages.find(m => m.role === 'user')?.content || '';
+      const systemPrompt = messages.find(m => m.role === 'system')?.content;
+      chatHistoryService.logEntry({
+        modelId: model,
+        systemPrompt,
+        userMessage,
+        messages,
+        response: fullContent,
+        tokens: tokenUsage,
+        durationMs: Date.now() - startTime,
+        success: true,
+      });
+
       callbacks.onComplete({
         content: fullContent,
         tokenUsage,
@@ -332,6 +358,22 @@ class AIService {
 
       const err = error instanceof Error ? error : new Error(String(error));
       logLLMError(err, 'streamChat');
+
+      // Log failed request to history
+      const userMessage = messages.find(m => m.role === 'user')?.content || '';
+      const systemPrompt = messages.find(m => m.role === 'system')?.content;
+      chatHistoryService.logEntry({
+        modelId: model,
+        systemPrompt,
+        userMessage,
+        messages,
+        response: fullContent,
+        tokens: tokenUsage,
+        durationMs: Date.now() - startTime,
+        success: false,
+        error: err.message,
+      });
+
       callbacks.onError(err);
     } finally {
       this.abortController = null;
